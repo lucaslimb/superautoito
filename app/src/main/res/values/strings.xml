@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">Super Auto Ito</string>
+    <string name="enter_name">Digite seu nome</string>
+    <string name="player_name_hint">Nome do jogador</string>
+    <string name="confirm">Confirmar</string>
+    <string name="create_room">Criar Sala (Host)</string>
+    <string name="join_room">Entrar em Sala</string>
+    <string name="start">Iniciar</string>
+    <string name="back">Voltar</string>
+    <string name="waiting">Aguardando...</string>
+    <string name="network_info">📡 Ambos os jogadores devem estar na mesma rede WiFi</string>
+    <string name="game_title">JOGO</string>
+    <string name="loading_game">Carregando jogo...</string>
 </resources>

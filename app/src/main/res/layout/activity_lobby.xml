@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="#1a1a1a">
+
+    <TextView
+        android:id="@+id/tv_player_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Bem-vindo, Jogador!"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#ff4444"
+        android:layout_marginBottom="32dp"/>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:backgroundTint="#2a2a2a"
+        android:elevation="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Escolha uma opção:"
+                android:textSize="18sp"
+                android:textColor="#ffffff"
+                android:layout_marginBottom="16dp"/>
+
+            <RadioGroup
+                android:id="@+id/radio_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp">
+
+                <RadioButton
+                    android:id="@+id/radio_host"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="Criar Sala (Host)"
+                    android:textSize="16sp"
+                    android:textColor="#ffffff"
+                    android:buttonTint="#ff4444"
+                    android:paddingStart="8dp"/>
+
+                <RadioButton
+                    android:id="@+id/radio_join"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="Entrar em Sala"
+                    android:textSize="16sp"
+                    android:textColor="#ffffff"
+                    android:buttonTint="#ff4444"
+                    android:paddingStart="8dp"
+                    android:layout_marginTop="8dp"/>
+
+                <RadioButton
+                    android:id="@+id/radio_solo"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="🎮 Modo Solo (Debug/Teste)"
+                    android:textSize="16sp"
+                    android:textColor="#4CAF50"
+                    android:buttonTint="#4CAF50"
+                    android:paddingStart="8dp"
+                    android:layout_marginTop="8dp"/>
+
+            </RadioGroup>
+
+            <TextView
+                android:id="@+id/tv_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Aguardando..."
+                android:textSize="16sp"
+                android:textColor="#cccccc"
+                android:layout_gravity="center"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"/>
+
+            <ProgressBar
+                android:id="@+id/progress_bar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:indeterminateTint="#ff4444"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"/>
+
+            <Button
+                android:id="@+id/btn_start"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="INICIAR"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:backgroundTint="#ff4444"
+                android:textColor="#ffffff"/>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <Button
+        android:id="@+id/btn_cancel"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="VOLTAR"
+        android:textSize="16sp"
+        android:backgroundTint="#444444"
+        android:textColor="#ffffff"
+        android:layout_marginTop="16dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="📡 Ambos os jogadores devem estar na mesma rede WiFi"
+        android:textSize="12sp"
+        android:textColor="#888888"
+        android:gravity="center"
+        android:layout_marginTop="24dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"/>
+
+</LinearLayout>
