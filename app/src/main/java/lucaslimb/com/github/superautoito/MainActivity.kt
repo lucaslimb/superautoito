@@ -28,11 +28,6 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            if (playerName.length < 3) {
-                Toast.makeText(this, "Nome deve ter pelo menos 3 caracteres", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
             val intent = Intent(this, LobbyActivity::class.java)
             intent.putExtra("PLAYER_NAME", playerName)
             startActivity(intent)

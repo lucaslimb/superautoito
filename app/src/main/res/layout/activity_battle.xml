@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#1a1a1a"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="BATALHA"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:textColor="#ff4444"
+        android:layout_marginBottom="20dp"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/tv_battle_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Carregando batalha..."
+            android:textSize="14sp"
+            android:textColor="#ffffff"
+            android:fontFamily="monospace"
+            android:padding="16dp"
+            android:lineSpacingExtra="4dp"/>
+
+    </ScrollView>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="A tela de batalha será implementada em seguida..."
+        android:textSize="14sp"
+        android:textColor="#888888"
+        android:layout_marginTop="20dp"/>
+
+</LinearLayout>
