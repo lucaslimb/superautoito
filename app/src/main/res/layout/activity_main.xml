@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="32dp"
+    android:padding="16dp"
     android:background="#1a1a1a">
 
     <TextView
@@ -28,7 +28,7 @@
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="16dp"
         android:backgroundTint="#2a2a2a"
         android:elevation="8dp">
 
@@ -36,42 +36,245 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="16dp">
 
-            <EditText
-                android:id="@+id/edit_player_name"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Modo de Jogo:"
+                android:textSize="16sp"
+                android:textColor="#ffffff"
+                android:layout_marginBottom="12dp"/>
+
+            <RadioGroup
+                android:id="@+id/radio_group"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:hint="Nome do jogador"
-                android:textColorHint="#888888"
-                android:textColor="@color/bronze"
-                android:background="@drawable/edit_text_background"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:inputType="textPersonName"
-                android:maxLength="20"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <RadioButton
+                    android:id="@+id/radio_host"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="Criar"
+                    android:textColor="#ffffff"
+                    android:buttonTint="@color/silver"/>
+
+                <RadioButton
+                    android:id="@+id/radio_join"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="Entrar"
+                    android:textColor="#ffffff"
+                    android:buttonTint="@color/silver"/>
+
+                <RadioButton
+                    android:id="@+id/radio_solo"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="CPU"
+                    android:textColor="@color/bronze"
+                    android:buttonTint="@color/silver"/>
+
+            </RadioGroup>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#444444"
                 android:layout_marginBottom="16dp"/>
 
-            <Button
-                android:id="@+id/btn_confirm"
+            <LinearLayout
+                android:id="@+id/layout_host_options"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="CONFIRMAR"
-                android:textSize="16sp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nome da Sala:"
+                    android:textColor="#cccccc"
+                    android:textSize="12sp"/>
+
+                <EditText
+                    android:id="@+id/et_room_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:hint="Ex: Arena Suprema"
+                    android:textColor="#ffffff"
+                    android:textColorHint="#666666"
+                    android:background="@android:color/transparent"
+                    android:inputType="textCapWords"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Número de Rounds:"
+                    android:textColor="#cccccc"
+                    android:textSize="12sp"
+                    android:layout_marginTop="8dp"/>
+
+                <EditText
+                    android:id="@+id/et_host_rounds"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:hint="Ex: 5"
+                    android:text="10"
+                    android:textColor="#ffffff"
+                    android:textColorHint="#666666"
+                    android:background="@android:color/transparent"
+                    android:inputType="number"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_join_options"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Salas Encontradas:"
+                    android:textColor="#cccccc"
+                    android:layout_marginBottom="8dp"/>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_room_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="120dp"
+                    android:background="@android:color/transparent"
+                    android:padding="4dp"
+                    android:scrollbars="vertical"/>
+
+                <ProgressBar
+                    android:id="@+id/pb_searching"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="8dp"
+                    android:indeterminateTint="#ff4444"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Buscando salas..."
+                    android:gravity="center"
+                    android:textSize="10sp"
+                    android:textColor="#666666"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_solo_options"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Número de Rounds:"
+                    android:textColor="#cccccc"
+                    android:textSize="12sp"/>
+
+                <EditText
+                    android:id="@+id/et_solo_rounds"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:hint="Ex: 10"
+                    android:text="10"
+                    android:textColor="#ffffff"
+                    android:textColorHint="#666666"
+                    android:background="@android:color/transparent"
+                    android:inputType="number"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Aguardando..."
+                android:textSize="14sp"
+                android:textColor="#ff4444"
+                android:layout_gravity="center"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"/>
+
+            <ProgressBar
+                android:id="@+id/progress_bar_main"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:indeterminateTint="#ff4444"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"/>
+
+            <Button
+                android:id="@+id/btn_start"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:text="SELECIONE UM MODO"
+                android:textSize="14sp"
                 android:textStyle="bold"
-                android:backgroundTint="@color/bronze"
-                android:textColor="#cccccc"/>
+                android:backgroundTint="#444444"
+                android:textColor="#aaaaaa"
+                android:enabled="false"/>
 
         </LinearLayout>
-
     </com.google.android.material.card.MaterialCardView>
+
+    <Button
+        android:id="@+id/btn_configs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="How to play"
+        android:textAllCaps="true"
+        android:textSize="12sp"
+        android:backgroundTint="@android:color/transparent"
+        android:textColor="#ffffff"/>
+
+    <Button
+        android:id="@+id/btn_cancel"
+        android:layout_width="100dp"
+        android:layout_height="48dp"
+        android:text="SAIR"
+        android:textSize="14sp"
+        android:backgroundTint="#333333"
+        android:textColor="#ffffff"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="1.0 - Rede Local"
+        android:text="1.0 - Local network version"
         android:textSize="12sp"
         android:textColor="#666666"
         android:layout_marginTop="24dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="github.com/lucaslimb"
+        android:linksClickable="true"
+        android:textSize="12sp"
+        android:textColor="#666666"
+        android:layout_marginTop="12dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="lucasdelimabzr@gmail.com"
+        android:linksClickable="true"
+        android:textSize="12sp"
+        android:textColor="#666666"
+        android:layout_marginTop="2dp"/>
 
 </LinearLayout>

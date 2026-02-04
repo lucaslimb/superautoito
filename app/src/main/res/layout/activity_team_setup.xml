@@ -36,18 +36,26 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp" />
 
+            <include
+                android:id="@+id/card_reserve_3"
+                layout="@layout/item_character_card"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp" />
+
             <TextView
                 android:id="@+id/tv_card_info"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="4"
+                android:layout_weight="3"
                 android:layout_marginStart="8dp"
                 android:padding="8dp"
                 android:text="Toque em uma carta para ver detalhes."
                 android:textColor="#cccccc"
                 android:textSize="11sp"
                 android:lineSpacingExtra="2dp"
-                android:gravity="center"
+                android:gravity="center|start"
                 android:ellipsize="end"
                 android:scrollbars="vertical"/>
 
@@ -149,6 +157,34 @@
             android:textColorHint="#555555"
             android:padding="8dp"
             android:layout_weight="3"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="8dp"
+            android:layout_weight="2">
+
+            <TextView
+                android:id="@+id/tv_round_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Round 1/5"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/bronze"
+                android:layout_marginEnd="16dp"/>
+
+            <TextView
+                android:id="@+id/tv_win_loss"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="V: 0 | D: 0"
+                android:textSize="14sp"
+                android:textColor="@color/bronze"/>
+
+        </LinearLayout>
 
         <TextView
             android:id="@+id/tv_instructions"

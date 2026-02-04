@@ -4,14 +4,17 @@ import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.util.Log
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.net.ServerSocket
 import java.net.Socket
+import java.nio.charset.StandardCharsets
 
 class NetworkManager(private val context: Context) {
 
@@ -25,179 +28,176 @@ class NetworkManager(private val context: Context) {
     private var reader: BufferedReader? = null
 
     companion object {
-        private const val SERVICE_TYPE = "_junjiitopets._tcp"
-        private const val SERVICE_NAME = "JunjiItoPetsGame"
+        // Nome do serviço deve ser único e seguir padrão DNS-SD
+        private const val SERVICE_TYPE = "_superautoito._tcp"
         private const val TAG = "NetworkManager"
-        const val PORT = 8888
     }
 
-    fun registerService(playerName: String): Flow<NetworkEvent> = callbackFlow {
+    // AGORA RECEBE roomName e rounds
+    fun registerService(roomName: String, rounds: Int): Flow<NetworkEvent> = callbackFlow {
         try {
-            serverSocket = ServerSocket(PORT)
+            // 0 = O Sistema Operacional escolhe uma porta livre automaticamente
+            serverSocket = ServerSocket(0)
+            val assignedPort = serverSocket!!.localPort
 
             val serviceInfo = NsdServiceInfo().apply {
-                serviceName = "$SERVICE_NAME-$playerName"
+                // Nome do serviço na rede (deve ser único, o android pode adicionar sufixos se repetir)
+                serviceName = "Ito-$roomName"
                 serviceType = SERVICE_TYPE
-                port = PORT
+                port = assignedPort
+
+                // ATRIBUTOS EXTRAS (A mágica acontece aqui)
+                // Enviamos o nome da sala e rounds via TXT Record do DNS-SD
+                setAttribute("room", roomName)
+                setAttribute("rounds", rounds.toString())
             }
 
             val registrationListener = object : NsdManager.RegistrationListener {
                 override fun onRegistrationFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
-                    Log.e(TAG, "Service registration failed: $errorCode")
-                    trySend(NetworkEvent.Error("Falha ao registrar serviço"))
+                    trySend(NetworkEvent.Error("Falha registro NSD: $errorCode"))
                 }
 
                 override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
-                    Log.e(TAG, "Service unregistration failed: $errorCode")
+                    // Ignorar erros de unregister ao fechar app
                 }
 
                 override fun onServiceRegistered(serviceInfo: NsdServiceInfo?) {
-                    Log.d(TAG, "Service registered: ${serviceInfo?.serviceName}")
                     trySend(NetworkEvent.ServiceRegistered)
+                    Log.d(TAG, "Serviço registrado na porta $assignedPort")
 
-                    // Aguardar conexão de cliente
+                    // Thread dedicada para aceitar conexão (Blocking Call)
                     Thread {
                         try {
                             trySend(NetworkEvent.WaitingForPlayer)
-                            clientSocket = serverSocket?.accept()
+                            // Bloqueia até alguém conectar
+                            val socket = serverSocket?.accept()
 
-                            clientSocket?.let { socket ->
-                                writer = PrintWriter(socket.getOutputStream(), true)
-                                reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-
+                            if (socket != null) {
+                                clientSocket = socket
+                                setupStreams(socket)
                                 trySend(NetworkEvent.Connected)
                             }
                         } catch (e: Exception) {
-                            Log.e(TAG, "Error accepting connection", e)
-                            trySend(NetworkEvent.Error("Erro ao aceitar conexão: ${e.message}"))
+                            if (!channel.isClosedForSend) {
+                                trySend(NetworkEvent.Error("Erro socket host: ${e.message}"))
+                            }
                         }
                     }.start()
                 }
 
-                override fun onServiceUnregistered(serviceInfo: NsdServiceInfo?) {
-                    Log.d(TAG, "Service unregistered")
-                }
+                override fun onServiceUnregistered(serviceInfo: NsdServiceInfo?) {}
             }
 
             nsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
+
         } catch (e: Exception) {
-            Log.e(TAG, "Error registering service", e)
-            trySend(NetworkEvent.Error("Erro ao criar servidor: ${e.message}"))
+            trySend(NetworkEvent.Error("Erro server socket: ${e.message}"))
         }
 
-        awaitClose {
-            disconnect()
-        }
+        awaitClose { disconnect() }
     }
 
     fun discoverServices(): Flow<NetworkEvent> = callbackFlow {
         val discoveryListener = object : NsdManager.DiscoveryListener {
             override fun onStartDiscoveryFailed(serviceType: String?, errorCode: Int) {
-                Log.e(TAG, "Discovery start failed: $errorCode")
-                trySend(NetworkEvent.Error("Falha ao iniciar busca"))
+                trySend(NetworkEvent.Error("Falha discovery: $errorCode"))
+                nsdManager.stopServiceDiscovery(this)
             }
 
-            override fun onStopDiscoveryFailed(serviceType: String?, errorCode: Int) {
-                Log.e(TAG, "Discovery stop failed: $errorCode")
-            }
-
-            override fun onDiscoveryStarted(serviceType: String?) {
-                Log.d(TAG, "Discovery started")
-                trySend(NetworkEvent.Searching)
-            }
-
-            override fun onDiscoveryStopped(serviceType: String?) {
-                Log.d(TAG, "Discovery stopped")
-            }
+            override fun onStopDiscoveryFailed(serviceType: String?, errorCode: Int) {}
+            override fun onDiscoveryStarted(serviceType: String?) { trySend(NetworkEvent.Searching) }
+            override fun onDiscoveryStopped(serviceType: String?) {}
 
             override fun onServiceFound(serviceInfo: NsdServiceInfo?) {
-                Log.d(TAG, "Service found: ${serviceInfo?.serviceName}")
-                serviceInfo?.let {
-                    trySend(NetworkEvent.ServiceFound(it))
+                // Filtra para garantir que é o nosso jogo
+                if (serviceInfo?.serviceType?.contains("_superautoito") == true) {
+                    // Precisamos RESOLVER o serviço para pegar os Atributos (Rounds/RoomName)
+                    // Discovery puro só dá o nome e tipo.
+                    nsdManager.resolveService(serviceInfo, object : NsdManager.ResolveListener {
+                        override fun onResolveFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
+                            Log.e(TAG, "Resolve falhou na busca: $errorCode")
+                        }
+
+                        override fun onServiceResolved(resolvedInfo: NsdServiceInfo?) {
+                            resolvedInfo?.let {
+                                trySend(NetworkEvent.ServiceFound(it))
+                            }
+                        }
+                    })
                 }
             }
 
-            override fun onServiceLost(serviceInfo: NsdServiceInfo?) {
-                Log.d(TAG, "Service lost: ${serviceInfo?.serviceName}")
-            }
+            override fun onServiceLost(serviceInfo: NsdServiceInfo?) {}
         }
 
         nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
-
         awaitClose {
-            try {
-                nsdManager.stopServiceDiscovery(discoveryListener)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error stopping discovery", e)
-            }
+            try { nsdManager.stopServiceDiscovery(discoveryListener) } catch (e: Exception) {}
         }
     }
 
     fun connectToService(serviceInfo: NsdServiceInfo): Flow<NetworkEvent> = callbackFlow {
-        val resolveListener = object : NsdManager.ResolveListener {
-            override fun onResolveFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
-                Log.e(TAG, "Resolve failed: $errorCode")
-                trySend(NetworkEvent.Error("Falha ao resolver serviço"))
+        Thread {
+            try {
+                // Usa o host e porta resolvidos pelo NSD
+                val socket = Socket(serviceInfo.host, serviceInfo.port)
+                clientSocket = socket
+                setupStreams(socket)
+                trySend(NetworkEvent.Connected)
+            } catch (e: Exception) {
+                trySend(NetworkEvent.Error("Falha conexão cliente: ${e.message}"))
             }
+        }.start()
 
-            override fun onServiceResolved(resolvedInfo: NsdServiceInfo?) {
-                Log.d(TAG, "Service resolved: ${resolvedInfo?.serviceName}")
+        awaitClose { disconnect() }
+    }
 
-                resolvedInfo?.let { info ->
-                    Thread {
-                        try {
-                            clientSocket = Socket(info.host, info.port)
+    private fun setupStreams(socket: Socket) {
+        // AutoFlush = true é crucial para enviar imediatamente
+        writer = PrintWriter(socket.getOutputStream(), true)
+        reader = BufferedReader(InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))
+    }
 
-                            clientSocket?.let { socket ->
-                                writer = PrintWriter(socket.getOutputStream(), true)
-                                reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-
-                                trySend(NetworkEvent.Connected)
-                            }
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error connecting to service", e)
-                            trySend(NetworkEvent.Error("Erro ao conectar: ${e.message}"))
-                        }
-                    }.start()
-                }
+    // TRANSFORMADO EM SUSPEND para rodar em IO
+    suspend fun sendMessage(message: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            if (writer != null && !clientSocket!!.isClosed) {
+                writer?.println(message)
+                return@withContext true
             }
-        }
-
-        nsdManager.resolveService(serviceInfo, resolveListener)
-
-        awaitClose {
-            disconnect()
+            return@withContext false
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro envio", e)
+            return@withContext false
         }
     }
 
-    fun sendMessage(message: String): Boolean {
-        return try {
-            writer?.println(message)
-            true
+    // TRANSFORMADO EM SUSPEND e trata nulos
+    suspend fun receiveMessage(): String? = withContext(Dispatchers.IO) {
+        try {
+            return@withContext reader?.readLine()
         } catch (e: Exception) {
-            Log.e(TAG, "Error sending message", e)
-            false
-        }
-    }
-
-    fun receiveMessage(): String? {
-        return try {
-            reader?.readLine()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error receiving message", e)
-            null
+            Log.e(TAG, "Erro recebimento", e)
+            return@withContext null
         }
     }
 
     fun disconnect() {
         try {
+            nsdManager.unregisterService(object : NsdManager.RegistrationListener { // Dummy listener para unregister
+                override fun onRegistrationFailed(p0: NsdServiceInfo?, p1: Int) {}
+                override fun onUnregistrationFailed(p0: NsdServiceInfo?, p1: Int) {}
+                override fun onServiceRegistered(p0: NsdServiceInfo?) {}
+                override fun onServiceUnregistered(p0: NsdServiceInfo?) {}
+            })
+        } catch (e: Exception) { /* Já estava sem registro */ }
+
+        try {
             writer?.close()
             reader?.close()
             clientSocket?.close()
             serverSocket?.close()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error disconnecting", e)
-        }
+        } catch (e: Exception) { }
     }
 }
 
