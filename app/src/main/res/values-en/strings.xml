@@ -1,0 +1,194 @@
+<resources>
+    <string name="app_name" translatable="false">Super Auto Ito</string>
+    <string name="app_subtitle" translatable="false">Junji Ito Cards Autobattle</string>
+    <string name="game_mode">Game Mode:</string>
+    <string name="mode_create">Create</string>
+    <string name="mode_join">Join</string>
+    <string name="mode_cpu" translatable="false">CPU</string>
+    <string name="room_name">Room Name:</string>
+    <string name="room_name_hint">Ex: Supreme Arena</string>
+    <string name="rounds_number">Number of Rounds:</string>
+    <string name="rounds_example_5">Ex: 5</string>
+    <string name="rounds_example_10">Ex: 10</string>
+    <string name="found_rooms">Rooms Found:</string>
+    <string name="searching_rooms">Searching for rooms…</string>
+    <string name="waiting">Waiting…</string>
+    <string name="select_mode">SELECT A MODE</string>
+    <string name="how_to_play">How to play?</string>
+    <string name="exit">EXIT</string>
+    <string name="version_info">1.0 - Local network version</string>
+    <string name="github_link">github.com/lucaslimb</string>
+    <string name="email_contact">lucasdelimabzr@gmail.com</string>
+
+    <string name="create_room">CREATE ROOM</string>
+    <string name="connect">CONNECT</string>
+    <string name="play_solo">PLAY SOLO</string>
+    <string name="toast_enter_room_name">Enter a room name</string>
+    <string name="creating_room">"Creating room '%s'…"</string>
+    <string name="connecting_to">Connecting to %s…</string>
+    <string name="starting_solo">Starting Solo mode (%d rounds)…</string>
+    <string name="room_created_waiting">Room created! Waiting for opponent…</string>
+    <string name="waiting_for_player">Waiting for someone to connect…</string>
+    <string name="connected_sync">Connected! Syncing…</string>
+    <string name="sync_error">Data synchronization error</string>
+    <string name="error_prefix">Error: %s</string>
+    <string name="player_you">You</string>
+    <string name="player_cpu">CPU</string>
+    <string name="player_you_no_accent">You</string>
+    <string name="connect_room_format">CONNECT: %s</string>
+    <string name="room_list_item">%1$s (%2$s Rounds)</string>
+
+    <string name="tips_title">Super Auto Ito</string>
+    <string name="section_game">The Game</string>
+    <string name="game_desc_1">Assemble the most powerful team of kyara from the Junji Ito universe and let them fight in auto-battles.</string>
+    <string name="game_desc_2">Each match is a test of strategy: choosing who joins the team, the order in which they fight, and how to combine their unique skills.</string>
+    <string name="section_cards">The Cards</string>
+    <string name="cards_desc_1">Each card represents a Junji Ito character (Tomie, Souichi, among others) and has two attributes:</string>
+    <string name="cards_desc_2">• Attack\n• Defense\nAttack always reduces the opponent\'s defense.</string>
+    <string name="cards_desc_3">Each character also has characteristics that affect their skills:</string>
+    <string name="cards_desc_4">Male, Female, Child, Corpse, Supernatural, and Common.</string>
+    <string name="section_skills">Skills</string>
+    <string name="skills_desc_1">Every character has a unique skill. They are divided into five types:</string>
+    <string name="skills_desc_2">• Buff\n• Debuff\n• Deck change\n• Summoning\n• Specials</string>
+    <string name="skills_desc_3">Each skill has an activation timing, target, and criteria based on the target\'s characteristics:</string>
+    <string name="skills_desc_4">Timings: On kill, On death, Battle start.\nTargets: Self, Enemy, Friend, All, Random, Killer, Deceased.</string>
+    <string name="section_deck">The Deck</string>
+    <string name="deck_desc_1">At the start of the match, 8 characters are drawn:</string>
+    <string name="deck_desc_2">• 6 enter the main team\n• 2 stay in reserve</string>
+    <string name="deck_desc_3">You can reorganize the team order and swap characters between main and reserve freely.</string>
+    <string name="deck_desc_4">Every round, it is mandatory to move at least one card from the reserve to the main team.</string>
+    <string name="deck_desc_5">Upon suffering a defeat, you can buy a random character from the shop and place it in the reserve. It can then enter the main team.</string>
+    <string name="section_battle">The Battle</string>
+    <string name="battle_desc_1">Battles happen in two phases:</string>
+    <string name="battle_desc_2">1. Start Phase: start skills are activated.\n2. Confrontation Phase: characters attack each other following the deck order.</string>
+    <string name="battle_desc_3">The winner is whoever still has cards at the end of the combat.</string>
+    <string name="btn_understood">OK, UNDERSTOOD</string>
+
+    <string name="card_info_hint">Tap a card to see details.</string>
+    <string name="btn_exit">EXIT</string>
+    <string name="team_name_default">MY TEAM</string>
+    <string name="team_name_hint">Team Name</string>
+    <string name="round_info">Round 1/5</string>
+    <string name="win_loss_info">W: 0 | L: 0</string>
+    <string name="swap_instructions">Select a card from the reserve and another from the main team to perform the swap.</string>
+    <string name="btn_start">START</string>
+
+    <string name="cpu_name">CPU</string>
+    <string name="default_player_name">Player</string>
+
+    <string name="default_instruction">Assemble your team!</string>
+    <string name="defeat_shop_available">DEFEAT! You can buy 1 card from the shop!</string>
+    <string name="shop_only_after_defeat">Shop only available after DEFEAT!</string>
+    <string name="shop_only_with_reserve">The Shop only swaps with the Reserve!</string>
+
+    <string name="swap_progress">Swap %1$d/%2$d complete!</string>
+    <string name="swap_complete">Mandatory swap completed!</string>
+    <string name="swap_required">You must perform a swap!</string>
+
+    <string name="round_info_format">Round %1$d/%2$d</string>
+    <string name="win_loss_format">W: %1$d | L: %2$d</string>
+
+    <string name="shop_card_info">
+        Mystery Card from the Shop.\nSwap with a reserve to reveal.\nThe Shop allows buying one card per defeat.
+    </string>
+
+    <string name="double_click_destination">%1$s. Double click on destination.</string>
+
+    <string name="banned_character">%1$s is banned this round!</string>
+    <string name="banned_moved_to_reserve">Banned! %1$s moved to reserve.</string>
+
+    <string name="no_power">None</string>
+    <string name="power_label">Power: %1$s</string>
+    <string name="trigger_label">Triggers: %1$s</string>
+    <string name="character_type_format">%1$s: %2$s</string>
+
+    <string name="battle_title">BATTLE</string>
+
+    <string name="player_label">PLAYER</string>
+    <string name="opponent_label">OPPONENT</string>
+
+    <string name="battle_start_log">The battle is about to begin…</string>
+
+    <string name="btn_play_again">PLAY AGAIN</string>
+    <string name="battle_started">Battle Started! %1$s vs %2$s</string>
+    <string name="battle_starting">Preparing for battle…</string>
+    <string name="combat_started">"COMBAT START"</string>
+    <string name="round_victory">"VICTORY - Round %1$d "</string>
+    <string name="round_defeat">"DEFEAT - Round %1$d "</string>
+    <string name="round_draw">"DRAW - Round %1$d "</string>
+
+    <string name="battle_pre_phase">--- PRE-BATTLE PHASE ---</string>
+    <string name="battle_pre_phase_end">Pre-battle phase concluded!</string>
+    <string name="battle_vs_format">%1$s VS %2$s</string>
+    <string name="battle_defeated_format">%1$s was defeated!</string>
+
+    <string name="ability_stat_change_format">%1$s %2$s %3$d %4$s of %5$s</string>
+
+    <string name="stat_attack">ATTACK</string>
+    <string name="stat_defense">DEFENSE</string>
+    <string name="stat_increased">increased</string>
+    <string name="stat_decreased">decreased</string>
+
+    <string name="invoke_reborn">%1$s was reborn!</string>
+    <string name="invoke_spider">%1$s summoned a Spider!</string>
+    <string name="invoke_bat">%1$s summoned a Bat!</string>
+    <string name="invoke_head">%1$s summoned a Head!</string>
+    <string name="invoke_copy">%1$s summoned a copy of %2$s!</string>
+    <string name="invoke_graveyard">%1$s summoned %2$s from the graveyard!</string>
+    <string name="invoke_revive_half">%1$s revived %2$s with half stats!</string>
+
+    <string name="deck_swap_stats">%1$s swapped stats of %2$s (%3$d/%4$d)</string>
+    <string name="deck_ban">%1$s banned %2$s from battle and the next round!</string>
+    <string name="deck_move">%1$s moved %2$s to position %3$d</string>
+
+    <string name="general_steal_def">%1$s stole %2$d defense from %3$s!</string>
+    <string name="general_copy_power">%1$s copied the power of %2$s!</string>
+    <string name="general_buff_neighbor">%1$s gave +%2$d DEF to %3$s</string>
+
+    <string name="type_child">Child</string>
+    <string name="type_supernatural">Supernatural</string>
+    <string name="type_corpse">Corpse</string>
+    <string name="type_common">Common</string>
+    <string name="type_masc">Male</string>
+    <string name="type_fem">Female</string>
+
+    <string name="trigger_on_kill">On kill</string>
+    <string name="trigger_on_death">On death</string>
+    <string name="trigger_before_battle">Before battle</string>
+    <string name="trigger_none">At no time</string>
+
+    <string name="power_oshikiri" formatted="false">+50% DEFENSE for SUPERNATURAL friend</string>
+    <string name="power_prof_okabe" formatted="false">+50% ATTACK against SUPERNATURAL enemy</string>
+    <string name="power_moco_sorvete" formatted="false">-50% DEFENSE for all CHILDREN</string>
+    <string name="power_kuriko" formatted="false">+50% DEFENSE for CHILD friend</string>
+    <string name="power_fuchi" formatted="false">+1 ATTACK against MALE enemy</string>
+    <string name="power_garoto" formatted="false">+1 ATTACK against FEMALE enemy</string>
+    <string name="power_yuki" formatted="false">+50% DEFENSE for CORPSE friend</string>
+    <string name="power_tio" formatted="false">-50% DEFENSE for CORPSE enemy</string>
+    <string name="power_misuzu" formatted="false">Inverts ATTACK and DEFENSE of random enemy</string>
+    <string name="power_yuko" formatted="false">Random enemy removed from DECK in NEXT round</string>
+    <string name="power_mulher_costelas" formatted="false">-1 DEFENSE for random enemy</string>
+    <string name="power_goro" formatted="false">Swaps POSITION of random enemy</string>
+    <string name="power_binzo" formatted="false">-1 ATTACK for random enemy</string>
+    <string name="power_tomie" formatted="false">Returns to END of DECK (only 1x)</string>
+    <string name="power_souichi" formatted="false">Summons a 1/1 SPIDER</string>
+    <string name="power_kazuya" formatted="false">Summons a 1/1 BAT</string>
+    <string name="power_terumi" formatted="false">Summons a 1/1 HEAD</string>
+    <string name="power_chiemi" formatted="false">Summons the ENEMY that KILLED her</string>
+    <string name="power_soldado" formatted="false">Summons a double of a random CARD from the DECK (if any)</string>
+    <string name="power_kumi" formatted="false">Summons the LAST card that DIED</string>
+    <string name="power_reanimador" formatted="false">Reanimates a dead CARD in the ROUND with 50% stats</string>
+    <string name="power_maya" formatted="false">+50% DEFENSE to friend NEXT to them</string>
+    <string name="power_nakayama" formatted="false">-1 DEFENSE to ALL</string>
+    <string name="power_manchas" formatted="false">-1 DEFENSE to the ENEMY that KILLED them</string>
+    <string name="power_misaki" formatted="false">Steals 50% DEFENSE of who KILLED them</string>
+    <string name="power_numei" formatted="false">-50% DEFENSE to the NEXT enemy</string>
+    <string name="power_ryo" formatted="false">Steals the POWER of who KILLED them</string>
+    <string name="power_frankenstein" formatted="false">+50% ATTACK to self</string>
+    <string name="power_ayumi" formatted="false">+50% DEFENSE to self</string>
+    <string name="power_esculturas" formatted="false">-50% ATTACK to the NEXT enemy</string>
+    <string name="power_hideo" formatted="false">+1 ATTACK to self</string>
+    <string name="power_tomoo" formatted="false">Random enemy removed from DECK in NEXT round</string>
+    <string name="deck_desc_6">Tip: try combining powers… Want to increase defense and attack for the whole team? Want to always have someone dead reviving? Focus on the build!</string>
+    <string name="touch_a_card">Touch a card to see its details.</string>
+</resources>

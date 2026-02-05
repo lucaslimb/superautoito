@@ -78,10 +78,10 @@ class TeamSetupActivity : AppCompatActivity() {
             val cpuMain = gameState!!.opponentTeam.toMutableList()
             val cpuRes = gameState!!.opponentReserve.toMutableList()
 
-            val (evolvedCpuTeam, evolvedCpuReserve) = simulateCpuAction(cpuMain, cpuRes)
+            val cpuWasDefeated = gameState!!.lastRoundWinner == 1
 
+            val (evolvedCpuTeam, evolvedCpuReserve) = simulateCpuAction(cpuMain, cpuRes, cpuWasDefeated)
             opponentReserve = evolvedCpuReserve
-
             opponentPlayer = Player(
                 id = "opponent",
                 name = getString(R.string.cpu_name),
@@ -127,11 +127,13 @@ class TeamSetupActivity : AppCompatActivity() {
 
     private fun simulateCpuAction(
         team: MutableList<Character>,
-        reserve: MutableList<Character>
+        reserve: MutableList<Character>,
+        wasDefeated: Boolean
     ): Pair<MutableList<Character>, MutableList<Character>> {
 
         if (reserve.isEmpty() || team.isEmpty()) return Pair(team, reserve)
 
+        // 1. Simulação padrão: Oponente faz algumas mudanças táticas (2 trocas)
         repeat(2) {
             val mainIndex = (0 until team.size).random()
             val reserveIndex = (0 until reserve.size).random()
@@ -141,9 +143,30 @@ class TeamSetupActivity : AppCompatActivity() {
             reserve[reserveIndex] = temp
         }
 
-        //  CPU compra uma carta da loja se derrotado (Lógica simples: troca 1 reserva por aleatória)
-        // val randomChar = Character.getDefaultCharacters().random()
-        // reserve[0] = randomChar
+        // 2. Lógica de Compra em caso de Derrota
+        if (wasDefeated) {
+            if (Math.random() < 0.5) {
+
+                val allCharacters = Character.getDefaultCharacters(this)
+                val usedIds = (team + reserve).map { it.id }
+                val available = allCharacters.filter { it.id !in usedIds }
+
+                if (available.isNotEmpty()) {
+                    val newChar = available.random()
+
+                    val randomReserveIndex = reserve.indices.random()
+                    reserve[randomReserveIndex] = newChar
+
+                    if (Math.random() < 0.25) {
+                        val randomTeamIndex = team.indices.random()
+
+                        val temp = team[randomTeamIndex]
+                        team[randomTeamIndex] = reserve[randomReserveIndex]
+                        reserve[randomReserveIndex] = temp
+                    }
+                }
+            }
+        }
 
         return Pair(team, reserve)
     }

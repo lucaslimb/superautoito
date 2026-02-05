@@ -1,10 +1,10 @@
 <resources>
-    <string name="app_name">Super Auto Ito</string>
-    <string name="app_subtitle">Junji Ito Cards Autobattle</string>
+    <string name="app_name" translatable="false">Super Auto Ito</string>
+    <string name="app_subtitle" translatable="false">Junji Ito Cards Autobattle</string>
     <string name="game_mode">Modo de Jogo:</string>
     <string name="mode_create">Criar</string>
     <string name="mode_join">Entrar</string>
-    <string name="mode_cpu">CPU</string>
+    <string name="mode_cpu" translatable="false">CPU</string>
     <string name="room_name">Nome da Sala:</string>
     <string name="room_name_hint">Ex: Arena Suprema</string>
     <string name="rounds_number">Número de Rounds:</string>
@@ -14,7 +14,7 @@
     <string name="searching_rooms">Buscando salas…</string>
     <string name="waiting">Aguardando…</string>
     <string name="select_mode">SELECIONE UM MODO</string>
-    <string name="how_to_play">How to play</string>
+    <string name="how_to_play">Como jogar?</string>
     <string name="exit">SAIR</string>
     <string name="version_info">1.0 - Local network version</string>
     <string name="github_link">github.com/lucaslimb</string>
@@ -56,7 +56,7 @@
     <string name="deck_desc_1">No início da partida, 8 personagens são sorteados:</string>
     <string name="deck_desc_2">• 6 entram no time principal\n• 2 ficam na reserva</string>
     <string name="deck_desc_3">Você pode reorganizar a ordem do time e trocar personagens entre principais e reservas livremente.</string>
-    <string name="deck_desc_4">A cada rodada, é obrigatório realizar ao menos um reserva ir para o time principal.</string>
+    <string name="deck_desc_4">A cada rodada, é obrigatório que você coloque ao menos uma carta da reserva no time principal.</string>
     <string name="deck_desc_5">Ao sofrer uma derrota, você pode comprar um personagem aleatório da loja e colocá-lo na reserva. Ele pode entrar no time principal em seguida.</string>
     <string name="section_battle">A Batalha</string>
     <string name="battle_desc_1">As batalhas acontecem em duas fases:</string>
@@ -73,54 +73,42 @@
     <string name="swap_instructions">Selecione uma carta da reserva e outra do time principal para realizar a troca.</string>
     <string name="btn_start">START</string>
 
-    <!-- Jogador / CPU -->
     <string name="cpu_name">CPU</string>
     <string name="default_player_name">Jogador</string>
 
-    <!-- Mensagens gerais -->
     <string name="default_instruction">Monte seu time!</string>
     <string name="defeat_shop_available">DERROTA! Você pode comprar 1 carta da loja!</string>
     <string name="shop_only_after_defeat">Loja disponível apenas após DERROTA!</string>
     <string name="shop_only_with_reserve">A Loja só troca com a Reserva!</string>
 
-    <!-- Trocas -->
     <string name="swap_progress">Troca %1$d/%2$d completa!</string>
     <string name="swap_complete">Troca obrigatórias concluída!</string>
     <string name="swap_required">Você deve fazer uma troca!</string>
 
-    <!-- Round / placar -->
     <string name="round_info_format">Round %1$d/%2$d</string>
     <string name="win_loss_format">V: %1$d | D: %2$d</string>
 
-    <!-- Loja -->
     <string name="shop_card_info">
         Carta Misteriosa da Loja.\nTroque com uma reserva para revelar.\nA Loja permite comprar uma carta por derrota.
     </string>
 
-    <!-- Seleção -->
     <string name="double_click_destination">%1$s. Double click no destino.</string>
 
-    <!-- Ban -->
     <string name="banned_character">%1$s está banido neste round!</string>
     <string name="banned_moved_to_reserve">Banido! %1$s movido para reserva.</string>
 
-    <!-- Poder / carta -->
     <string name="no_power">Nenhum</string>
     <string name="power_label">Poder: %1$s</string>
     <string name="trigger_label">Quando ativa: %1$s</string>
     <string name="character_type_format">%1$s: %2$s</string>
 
-    <!-- Título -->
     <string name="battle_title">BATTLE</string>
 
-    <!-- Nomes -->
     <string name="player_label">JOGADOR</string>
     <string name="opponent_label">OPONENTE</string>
 
-    <!-- Log de batalha -->
     <string name="battle_start_log">A batalha vai começar…</string>
 
-    <!-- Botões -->
     <string name="btn_play_again">JOGAR NOVAMENTE</string>
     <string name="battle_started">Batalha Iniciada! %1$s vs %2$s</string>
     <string name="battle_starting">Preparando a batalha…</string>
@@ -157,7 +145,6 @@
     <string name="general_copy_power">%1$s copiou o poder de %2$s!</string>
     <string name="general_buff_neighbor">%1$s deu +%2$d DEF para %3$s</string>
 
-    <!-- CharacterType -->
     <string name="type_child">Criança</string>
     <string name="type_supernatural">Sobrenatural</string>
     <string name="type_corpse">Cadáver</string>
@@ -165,13 +152,11 @@
     <string name="type_masc">Masculino</string>
     <string name="type_fem">Feminino</string>
 
-    <!-- TriggerType -->
     <string name="trigger_on_kill">Ao matar</string>
     <string name="trigger_on_death">Ao morrer</string>
     <string name="trigger_before_battle">Antes da batalha</string>
     <string name="trigger_none">Em nenhum momento</string>
 
-    <!-- Powers -->
     <string name="power_oshikiri" formatted="false">+50% de DEFESA para amigo SOBRENATURAL</string>
     <string name="power_prof_okabe" formatted="false">+50% de ATAQUE contra inimigo SOBRENATURAL</string>
     <string name="power_moco_sorvete" formatted="false">-50% de DEFESA para todas as CRIANÇAS</string>
@@ -205,4 +190,5 @@
     <string name="power_hideo" formatted="false">+1 de ATAQUE a si próprio</string>
     <string name="power_tomoo" formatted="false">Inimigo aleatório removido do DECK no PRÓXIMO round</string>
     <string name="deck_desc_6">Dica: tente combinar poderes… Quer aumentar defesa e ataque do time todo? Quer ter sempre algum morto renascendo? Foque na build!</string>
+    <string name="touch_a_card">Toque em uma carta para ver seus detalhes.</string>
 </resources>

@@ -22,7 +22,7 @@
             <include android:id="@+id/card_reserve_1" layout="@layout/item_character_card" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="4dp" />
             <include android:id="@+id/card_reserve_2" layout="@layout/item_character_card" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="4dp" />
             <include android:id="@+id/card_reserve_3" layout="@layout/item_character_card" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="4dp" />
-            <TextView android:id="@+id/tv_card_info" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="3" android:layout_marginStart="8dp" android:padding="8dp" android:text="Toque em uma carta para ver detalhes." android:textColor="#cccccc" android:textSize="11sp" android:lineSpacingExtra="2dp" android:gravity="center|start" android:ellipsize="end" android:scrollbars="vertical"/>
+            <TextView android:id="@+id/tv_card_info" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="3" android:layout_marginStart="8dp" android:padding="8dp" android:text="@string/touch_a_card" android:textColor="#cccccc" android:textSize="11sp" android:lineSpacingExtra="2dp" android:gravity="center|start" android:ellipsize="end" android:scrollbars="vertical"/>
         </LinearLayout>
 
         <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#333333" android:layout_marginTop="4dp"/>
@@ -62,7 +62,7 @@
             android:layout_width="wrap_content"
             android:layout_height="35dp"
             android:backgroundTint="@android:color/transparent"
-            android:text="SAIR"
+            android:text="@string/exit"
             android:textColor="#ffffff"
             android:textSize="10sp"
             android:textStyle="bold"
@@ -73,7 +73,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:text="MEU TIME"
+            android:text="@string/team_name_default"
             android:textSize="22sp"
             android:textStyle="bold"
             android:textColor="@color/dark_red"
@@ -107,7 +107,7 @@
                 android:id="@+id/tv_win_loss"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="V: 0 | D: 0"
+                android:text="@string/win_loss_info"
                 android:textSize="12sp"
                 android:textColor="@color/dark_red"/>
 
@@ -117,7 +117,7 @@
             android:id="@+id/tv_instructions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Selecione uma carta da reserva e outra do time principal para realizar a troca."
+            android:text="@string/default_instruction"
             android:textSize="13sp"
             android:textColor="#cccccc"
             android:gravity="center"
