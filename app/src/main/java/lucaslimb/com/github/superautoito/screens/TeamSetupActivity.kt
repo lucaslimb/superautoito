@@ -13,6 +13,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import lucaslimb.com.github.superautoito.MainActivity
@@ -20,6 +21,12 @@ import lucaslimb.com.github.superautoito.R
 import lucaslimb.com.github.superautoito.model.Player
 import lucaslimb.com.github.superautoito.model.Character
 import lucaslimb.com.github.superautoito.model.GameState
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.google.gson.Gson
+import lucaslimb.com.github.superautoito.network.NetworkManager
 
 enum class CardZone {
     MAIN, RESERVE, SHOP
@@ -34,7 +41,7 @@ class TeamSetupActivity : AppCompatActivity() {
     private lateinit var tvInstructions: TextView
     private lateinit var mainCards: MutableList<Character>
     private lateinit var reserveCards: MutableList<Character>
-
+    private var isMultiplayer: Boolean = false
     private lateinit var shopCard: Character
 
     private val mainCardViews = mutableListOf<View>()
@@ -56,6 +63,8 @@ class TeamSetupActivity : AppCompatActivity() {
     private var initialTeamSnapshot: List<Int> = emptyList()
     private var maxRounds: Int = 20
     private lateinit var btnExit: Button
+    private val gson = Gson()
+    private lateinit var networkManager: NetworkManager
 
     private val feedbackHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val resetTextRunnable = Runnable { tvInstructions.text = defaultText }
@@ -70,23 +79,37 @@ class TeamSetupActivity : AppCompatActivity() {
         gameState = intent.getParcelableExtra("GAME_STATE")
         initViews()
 
+        if (isMultiplayer) {
+            networkManager = NetworkManager(this)
+        }
+
         if (gameState != null) {
             maxRounds = gameState!!.totalRounds
+            isMultiplayer = gameState!!.isMultiplayer
+
             mainCards = gameState!!.playerTeam.toMutableList()
             reserveCards = gameState!!.playerReserve.toMutableList()
 
             val cpuMain = gameState!!.opponentTeam.toMutableList()
             val cpuRes = gameState!!.opponentReserve.toMutableList()
 
-            val cpuWasDefeated = gameState!!.lastRoundWinner == 1
-
-            val (evolvedCpuTeam, evolvedCpuReserve) = simulateCpuAction(cpuMain, cpuRes, cpuWasDefeated)
-            opponentReserve = evolvedCpuReserve
-            opponentPlayer = Player(
-                id = "opponent",
-                name = getString(R.string.cpu_name),
-                hand = evolvedCpuTeam
-            )
+            if (isMultiplayer) {
+                opponentReserve = cpuRes
+                opponentPlayer = Player(
+                    id = "opponent",
+                    name = getString(R.string.opponent_name),
+                    hand = cpuMain
+                )
+            } else {
+                val cpuWasDefeated = gameState!!.lastRoundWinner == 1
+                val (evolvedCpuTeam, evolvedCpuReserve) = simulateCpuAction(cpuMain, cpuRes, cpuWasDefeated)
+                opponentReserve = evolvedCpuReserve
+                opponentPlayer = Player(
+                    id = "opponent",
+                    name = getString(R.string.cpu_name),
+                    hand = evolvedCpuTeam
+                )
+            }
 
             currentPlayer = Player(
                 id = "player",
@@ -96,10 +119,10 @@ class TeamSetupActivity : AppCompatActivity() {
             )
 
             applyBans(gameState!!.nextRoundBannedCharacters)
-
             initialTeamSnapshot = mainCards.map { it.id }
         } else {
             maxRounds = intent.getIntExtra("MAX_ROUNDS", 10)
+            isMultiplayer = intent.getBooleanExtra("IS_MULTIPLAYER", false)
             currentPlayer = intent.getParcelableExtra("CURRENT_PLAYER") ?: return finish()
 
             val passedOpponent = intent.getParcelableExtra<Player>("OPPONENT_PLAYER") ?: return finish()
@@ -111,7 +134,10 @@ class TeamSetupActivity : AppCompatActivity() {
             val cpuMain = opponentHand.take(6).toMutableList()
             opponentReserve = opponentHand.drop(6).take(2).toMutableList()
 
-            opponentPlayer = passedOpponent.copy(hand = cpuMain)
+            opponentPlayer = passedOpponent.copy(
+                name = if (isMultiplayer) getString(R.string.opponent_name) else getString(R.string.cpu_name),
+                hand = cpuMain
+            )
         }
 
         shopCard = generateRandomShopCard()
@@ -188,17 +214,16 @@ class TeamSetupActivity : AppCompatActivity() {
         val allCharacters = Character.getDefaultCharacters(context = this)
 
         val playerIds = (mainCards + reserveCards).map { it.id }
-
-        val opponentIds = if (::opponentReserve.isInitialized) {
-            (opponentPlayer.hand + opponentReserve).map { it.id }
-        } else {
-            opponentPlayer.hand.map { it.id }
-        }
+        val opponentIds = (opponentPlayer.hand + opponentReserve).map { it.id }
 
         val usedIds = playerIds + opponentIds
         val available = allCharacters.filter { it.id !in usedIds }
 
-        return if (available.isNotEmpty()) available.random() else allCharacters.random()
+        return if (available.isNotEmpty()) {
+            available.random()
+        } else {
+            allCharacters.random()
+        }
     }
 
     private fun handleShopTransaction(currentIndex: Int, currentZone: CardZone) {
@@ -322,40 +347,22 @@ class TeamSetupActivity : AppCompatActivity() {
         btnConfirm.setOnClickListener {
             if (gameState != null && gameState!!.currentRound > 1) {
                 val currentTeamSnapshot = mainCards.map { it.id }
-
                 if (currentTeamSnapshot == initialTeamSnapshot) {
                     showFeedbackMessage(getString(R.string.swap_required))
                     return@setOnClickListener
                 }
             }
+
             val rawTeamName = etTeamName.text.toString().trim()
             val finalTeamName = rawTeamName.ifEmpty { currentPlayer.name }
 
-            val intent = Intent(this, BattleActivity::class.java)
-
-            if (gameState != null) {
-                val updatedState = gameState!!.copy(
-                    playerTeam = mainCards.reversed(),
-                    playerReserve = reserveCards,
-                    opponentTeam = opponentPlayer.hand,
-                    opponentReserve = opponentReserve
-                )
-                intent.putExtra("GAME_STATE", updatedState)
-                intent.putExtra("PLAYER_NAME", finalTeamName)
+            if (isMultiplayer) {
+                lifecycleScope.launch {
+                    syncAndStartBattle(finalTeamName)
+                }
             } else {
-                val updatedPlayer = currentPlayer.copy(
-                    name = finalTeamName,
-                    hand = mainCards.reversed()
-                )
-                intent.putExtra("CURRENT_PLAYER", updatedPlayer)
-                intent.putExtra("OPPONENT_PLAYER", opponentPlayer)
-                intent.putParcelableArrayListExtra("PLAYER_RESERVE", ArrayList(reserveCards))
-                intent.putParcelableArrayListExtra("OPPONENT_RESERVE", ArrayList(opponentReserve))
-                intent.putExtra("MAX_ROUNDS", maxRounds)
+                startBattleLocal(finalTeamName)
             }
-
-            startActivity(intent)
-            finish()
         }
         btnExit.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
@@ -363,6 +370,100 @@ class TeamSetupActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         }
+    }
+
+    private suspend fun syncAndStartBattle(teamName: String) = withContext(Dispatchers.IO) {
+        try {
+            val myTeamData = mapOf(
+                "team" to mainCards.reversed(),
+                "reserve" to reserveCards
+            )
+
+            val myJson = gson.toJson(myTeamData)
+            networkManager.sendMessage(myJson)
+
+            val opponentJson = networkManager.receiveMessage()
+                ?: throw Exception("Não recebeu time do oponente")
+
+            val opponentData = gson.fromJson(opponentJson, Map::class.java)
+            val opponentTeamJson = gson.toJson(opponentData["team"])
+            val opponentReserveJson = gson.toJson(opponentData["reserve"])
+
+            val opponentTeam = gson.fromJson(opponentTeamJson, Array<Character>::class.java).toList()
+            val opponentRes = gson.fromJson(opponentReserveJson, Array<Character>::class.java).toList()
+
+            withContext(Dispatchers.Main) {
+                val intent = Intent(this@TeamSetupActivity, BattleActivity::class.java)
+
+                if (gameState != null) {
+                    val updatedState = gameState!!.copy(
+                        playerTeam = mainCards.reversed(),
+                        playerReserve = reserveCards,
+                        opponentTeam = opponentTeam,
+                        opponentReserve = opponentRes,
+                        isMultiplayer = true
+                    )
+                    intent.putExtra("GAME_STATE", updatedState)
+                    intent.putExtra("PLAYER_NAME", teamName)
+                } else {
+                    val updatedPlayer = currentPlayer.copy(
+                        name = teamName,
+                        hand = mainCards.reversed()
+                    )
+                    val updatedOpponent = opponentPlayer.copy(
+                        hand = opponentTeam
+                    )
+                    intent.putExtra("CURRENT_PLAYER", updatedPlayer)
+                    intent.putExtra("OPPONENT_PLAYER", updatedOpponent)
+                    intent.putParcelableArrayListExtra("PLAYER_RESERVE", ArrayList(reserveCards))
+                    intent.putParcelableArrayListExtra("OPPONENT_RESERVE", ArrayList(opponentRes))
+                    intent.putExtra("MAX_ROUNDS", maxRounds)
+                    intent.putExtra("IS_MULTIPLAYER", true)
+                }
+
+                startActivity(intent)
+                finish()
+            }
+
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    this@TeamSetupActivity,
+                    "Erro de sync: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun startBattleLocal(teamName: String) {
+        val intent = Intent(this, BattleActivity::class.java)
+
+        if (gameState != null) {
+            val updatedState = gameState!!.copy(
+                playerTeam = mainCards.reversed(),
+                playerReserve = reserveCards,
+                opponentTeam = opponentPlayer.hand,
+                opponentReserve = opponentReserve,
+                isMultiplayer = false
+            )
+            intent.putExtra("GAME_STATE", updatedState)
+            intent.putExtra("PLAYER_NAME", teamName)
+        } else {
+            val updatedPlayer = currentPlayer.copy(
+                name = teamName,
+                hand = mainCards.reversed()
+            )
+            intent.putExtra("CURRENT_PLAYER", updatedPlayer)
+            intent.putExtra("OPPONENT_PLAYER", opponentPlayer)
+            intent.putParcelableArrayListExtra("PLAYER_RESERVE", ArrayList(reserveCards))
+            intent.putParcelableArrayListExtra("OPPONENT_RESERVE", ArrayList(opponentReserve))
+            intent.putExtra("MAX_ROUNDS", maxRounds)
+            intent.putExtra("IS_MULTIPLAYER", false)
+        }
+
+        startActivity(intent)
+        finish()
     }
 
     private fun onCardClicked(index: Int, zone: CardZone) {
@@ -498,11 +599,8 @@ class TeamSetupActivity : AppCompatActivity() {
 
         val builder = SpannableStringBuilder()
 
-        // 1. ID em Romano
         builder.append(character.id.toRoman()).append("\n")
 
-        // 2. Tipo do Personagem (Nome e Tipos)
-        // Usamos context.getSpannableString personalizado para formatar com cores
         val typeText = formatSpannable(
             getString(
                 R.string.character_type_format,
@@ -510,7 +608,6 @@ class TeamSetupActivity : AppCompatActivity() {
                 character.types.joinToString(" e ") { getString(it.desc) }
             ),
             grayColor,
-            // Removido character.name daqui
             character.types.joinToString(" e ") { getString(it.desc) }
         )
         builder.append(typeText).append("\n")

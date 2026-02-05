@@ -192,4 +192,6 @@
     <string name="deck_desc_6">Dica: tente combinar poderes… Quer aumentar defesa e ataque do time todo? Quer ter sempre algum morto renascendo? Foque na build!</string>
     <string name="touch_a_card">Toque em uma carta para ver seus detalhes.</string>
     <string name="toast_invalid_rounds">Número de rounds: de 1 a 20</string>
+    <string name="error_timeout">Timeout da conexão excedido.</string>
+    <string name="opponent_name">Oponente\n</string>
 </resources>

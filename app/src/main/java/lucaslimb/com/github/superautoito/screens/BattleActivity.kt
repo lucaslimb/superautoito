@@ -8,14 +8,18 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import lucaslimb.com.github.superautoito.MainActivity
 import lucaslimb.com.github.superautoito.R
 import lucaslimb.com.github.superautoito.engine.BattleEngine
 import lucaslimb.com.github.superautoito.model.Character
 import lucaslimb.com.github.superautoito.model.GameState
 import lucaslimb.com.github.superautoito.model.Player
+import lucaslimb.com.github.superautoito.network.NetworkManager
 
 class BattleActivity : AppCompatActivity() {
 
@@ -35,6 +39,11 @@ class BattleActivity : AppCompatActivity() {
     private lateinit var tvBattleLog: TextView
     private var gameState: GameState? = null
     private var isFirstLoad = true
+    private var isMultiplayer = false
+
+    // Multiplayer
+    private lateinit var networkManager: NetworkManager
+    private val gson = Gson()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,6 +68,7 @@ class BattleActivity : AppCompatActivity() {
             opponentReserve = gameState!!.opponentReserve
             isFirstLoad = false
         } else {
+            isMultiplayer = intent.getBooleanExtra("IS_MULTIPLAYER", false)
             currentPlayer = intent.getParcelableExtra("CURRENT_PLAYER") ?: return finish()
             opponentPlayer = intent.getParcelableExtra("OPPONENT_PLAYER") ?: return finish()
             val maxRounds = intent.getIntExtra("MAX_ROUNDS", 10)
@@ -71,12 +81,15 @@ class BattleActivity : AppCompatActivity() {
                 playerTeam = currentPlayer.hand,
                 playerReserve = playerRes,
                 opponentTeam = opponentPlayer.hand,
-                opponentReserve = opponentReserve
+                opponentReserve = opponentReserve,
+                isMultiplayer = isMultiplayer
             )
             isFirstLoad = true
         }
 
-        balanceTeams()
+        if (isMultiplayer) {
+            networkManager = NetworkManager(this)
+        }
 
         initViews()
         setupBattleField()
@@ -92,14 +105,6 @@ class BattleActivity : AppCompatActivity() {
         lifecycleScope.launch {
             delay(1500)
             startBattleSequence()
-        }
-    }
-
-    private fun balanceTeams() {
-        if (opponentPlayer.hand.size > 6) {
-            opponentPlayer = opponentPlayer.copy(
-                hand = opponentPlayer.hand.take(6)
-            )
         }
     }
 
@@ -155,12 +160,15 @@ class BattleActivity : AppCompatActivity() {
         }
 
         delay(1500)
-        announceWinner()
+        if (isMultiplayer) {
+            announceWinnerMultiplayer()
+        } else {
+            announceWinnerCPU()
+        }
     }
 
-    private fun announceWinner() {
+    private fun announceWinnerCPU() {
         val winner = battleEngine.getWinner()
-
         val bannedIds = battleEngine.getBannedIds()
 
         val newState = when (winner) {
@@ -171,9 +179,9 @@ class BattleActivity : AppCompatActivity() {
                     playerWins = gameState!!.playerWins + 1,
                     playerCanBuyCard = false,
                     lastRoundWinner = 1,
-                    playerTeam = currentPlayer.hand.reversed(), // Reseta para o estado original
+                    playerTeam = currentPlayer.hand.reversed(),
                     playerReserve = gameState!!.playerReserve,
-                    nextRoundBannedCharacters = bannedIds, // Salva os bans
+                    nextRoundBannedCharacters = bannedIds,
                     opponentTeam = opponentPlayer.hand.reversed(),
                     opponentReserve = opponentReserve
                 )
@@ -183,11 +191,11 @@ class BattleActivity : AppCompatActivity() {
                 gameState!!.copy(
                     currentRound = gameState!!.currentRound + 1,
                     playerLosses = gameState!!.playerLosses + 1,
-                    playerCanBuyCard = true, // Pode comprar na loja!
+                    playerCanBuyCard = true,
                     lastRoundWinner = -1,
-                    playerTeam = currentPlayer.hand.reversed(), // Reseta para o estado original
+                    playerTeam = currentPlayer.hand.reversed(),
                     playerReserve = gameState!!.playerReserve,
-                    nextRoundBannedCharacters = bannedIds, // Salva os bans
+                    nextRoundBannedCharacters = bannedIds,
                     opponentTeam = opponentPlayer.hand.reversed(),
                     opponentReserve = opponentReserve
                 )
@@ -197,9 +205,9 @@ class BattleActivity : AppCompatActivity() {
                 gameState!!.copy(
                     currentRound = gameState!!.currentRound + 1,
                     lastRoundWinner = 0,
-                    playerTeam = currentPlayer.hand.reversed(), // Reseta para o estado original
+                    playerTeam = currentPlayer.hand.reversed(),
                     playerReserve = gameState!!.playerReserve,
-                    nextRoundBannedCharacters = bannedIds, // Salva os bans
+                    nextRoundBannedCharacters = bannedIds,
                     opponentTeam = opponentPlayer.hand.reversed(),
                     opponentReserve = opponentReserve
                 )
@@ -214,6 +222,117 @@ class BattleActivity : AppCompatActivity() {
                 setupGameOverListeners()
             } else {
                 returnToSetup(newState)
+            }
+        }
+    }
+
+    private fun announceWinnerMultiplayer() {
+        lifecycleScope.launch {
+            val localWinner = battleEngine.getWinner()
+            val localBannedIds = battleEngine.getBannedIds()
+
+            logBattle("Sincronizando resultado...")
+
+            try {
+                withContext(Dispatchers.IO) {
+                    val myResult = mapOf(
+                        "winner" to localWinner,
+                        "bannedIds" to localBannedIds
+                    )
+
+                    val myJson = gson.toJson(myResult)
+                    networkManager.sendMessage(myJson)
+
+                    val opponentJson = networkManager.receiveMessage()
+                        ?: throw Exception("Não recebeu resultado do oponente")
+
+                    val opponentResult = gson.fromJson(opponentJson, Map::class.java)
+                    val opponentWinner = (opponentResult["winner"] as Double).toInt()
+                    val opponentBannedIdsJson = gson.toJson(opponentResult["bannedIds"])
+                    val opponentBannedIds = gson.fromJson(
+                        opponentBannedIdsJson,
+                        Array<Int>::class.java
+                    ).toList()
+
+                    val expectedOpponentWinner = when (localWinner) {
+                        1 -> -1
+                        -1 -> 1
+                        else -> 0
+                    }
+
+                    if (opponentWinner != expectedOpponentWinner) {
+                        throw Exception("Dessincronização detectada! Resultados diferentes.")
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        val allBannedIds = (localBannedIds + opponentBannedIds).distinct()
+
+                        val newState = when (localWinner) {
+                            1 -> {
+                                logBattle(getString(R.string.round_victory, gameState!!.currentRound))
+                                gameState!!.copy(
+                                    currentRound = gameState!!.currentRound + 1,
+                                    playerWins = gameState!!.playerWins + 1,
+                                    playerCanBuyCard = false,
+                                    lastRoundWinner = 1,
+                                    playerTeam = currentPlayer.hand.reversed(),
+                                    playerReserve = gameState!!.playerReserve,
+                                    nextRoundBannedCharacters = allBannedIds,
+                                    opponentTeam = opponentPlayer.hand.reversed(),
+                                    opponentReserve = opponentReserve,
+                                    isMultiplayer = true
+                                )
+                            }
+                            -1 -> {
+                                logBattle(getString(R.string.round_defeat, gameState!!.currentRound))
+                                gameState!!.copy(
+                                    currentRound = gameState!!.currentRound + 1,
+                                    playerLosses = gameState!!.playerLosses + 1,
+                                    playerCanBuyCard = true,
+                                    lastRoundWinner = -1,
+                                    playerTeam = currentPlayer.hand.reversed(),
+                                    playerReserve = gameState!!.playerReserve,
+                                    nextRoundBannedCharacters = allBannedIds,
+                                    opponentTeam = opponentPlayer.hand.reversed(),
+                                    opponentReserve = opponentReserve,
+                                    isMultiplayer = true
+                                )
+                            }
+                            else -> {
+                                logBattle(getString(R.string.round_draw, gameState!!.currentRound))
+                                gameState!!.copy(
+                                    currentRound = gameState!!.currentRound + 1,
+                                    lastRoundWinner = 0,
+                                    playerTeam = currentPlayer.hand.reversed(),
+                                    playerReserve = gameState!!.playerReserve,
+                                    nextRoundBannedCharacters = allBannedIds,
+                                    opponentTeam = opponentPlayer.hand.reversed(),
+                                    opponentReserve = opponentReserve,
+                                    isMultiplayer = true
+                                )
+                            }
+                        }
+
+                        delay(1500)
+
+                        if (newState.isGameOver()) {
+                            showFinalResult(newState)
+                            setupGameOverListeners()
+                        } else {
+                            returnToSetup(newState)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    logBattle("Erro de sincronização: ${e.message}")
+                    delay(2000)
+
+                    val intent = Intent(this@BattleActivity, MainActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                    startActivity(intent)
+                    finish()
+                }
             }
         }
     }
@@ -237,6 +356,7 @@ class BattleActivity : AppCompatActivity() {
         val intent = Intent(this, TeamSetupActivity::class.java)
         intent.putExtra("GAME_STATE", state)
         intent.putExtra("PLAYER_NAME", currentPlayer.name)
+        intent.putExtra("IS_MULTIPLAYER", isMultiplayer)
         startActivity(intent)
         finish()
     }
@@ -262,7 +382,6 @@ class BattleActivity : AppCompatActivity() {
         for (i in views.indices) {
             val cardView = views[i]
 
-            // 1. Pare tudo imediatamente
             cardView.animate().cancel()
             cardView.clearAnimation()
 
@@ -270,21 +389,14 @@ class BattleActivity : AppCompatActivity() {
                 val character = cards[i]
                 val isNewCardInSlot = cardView.tag != character.id
 
-                // --- O SEGREDO ESTÁ AQUI ---
-                // Se for um card novo assumindo este slot (fila andou),
-                // nós o tornamos INVISÍVEL AGORA, antes de atualizar qualquer texto/imagem.
                 if (isNewCardInSlot) {
                     cardView.alpha = 0f
-                    // Já joga ele para a posição inicial do deslize (fora do lugar)
                     val direction = if (isPlayer) 1 else -1
                     cardView.translationX = 150f * direction
-                    // Reseta escala caso a morte tenha diminuído o view anterior
                     cardView.scaleX = 1f
                     cardView.scaleY = 1f
                 }
-                // ---------------------------
 
-                // 2. Agora é seguro atualizar a UI (ninguém está vendo se alpha for 0)
                 val tvAttack = cardView.findViewById<TextView>(R.id.tv_attack)
                 val tvDefense = cardView.findViewById<TextView>(R.id.tv_defense)
                 val imgCharacter = cardView.findViewById<ImageView>(R.id.img_character)
@@ -298,13 +410,9 @@ class BattleActivity : AppCompatActivity() {
                     imgCharacter.setImageResource(R.drawable.ic_character_placeholder)
                 }
 
-                // Limpa o filtro vermelho (caso a view anterior tenha morrido)
                 imgCharacter.clearColorFilter()
 
-                // 3. Lógica de Animação
                 if (isNewCardInSlot) {
-                    // Agora que tudo está pronto e escondido, tornamos VISIBLE (ainda transparente)
-                    // e iniciamos o Fade In + Slide
                     cardView.visibility = View.VISIBLE
                     cardView.tag = character.id
 
@@ -315,8 +423,6 @@ class BattleActivity : AppCompatActivity() {
                         .setInterpolator(android.view.animation.DecelerateInterpolator())
                         .start()
                 } else {
-                    // Card que já estava aqui (atualização de vida ou load inicial)
-                    // Garante que está visível e na posição certa
                     if (cardView.visibility != View.VISIBLE || cardView.alpha < 1f) {
                         cardView.visibility = View.VISIBLE
                         cardView.alpha = 1f
@@ -327,10 +433,8 @@ class BattleActivity : AppCompatActivity() {
                 }
 
             } else {
-                // Slot vazio
                 cardView.visibility = View.INVISIBLE
                 cardView.tag = null
-                // Reseta propriedades para uso futuro
                 cardView.alpha = 1f
                 cardView.translationX = 0f
                 cardView.scaleX = 1f
@@ -429,6 +533,10 @@ class BattleActivity : AppCompatActivity() {
 
     private fun setupGameOverListeners() {
         btnExitGame.setOnClickListener {
+            if (isMultiplayer) {
+                networkManager.disconnect()
+            }
+
             val intent = Intent(this, MainActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
             startActivity(intent)
@@ -436,24 +544,30 @@ class BattleActivity : AppCompatActivity() {
         }
 
         btnPlayAgain.setOnClickListener {
-            val allCharacters = Character.getDefaultCharacters(context = this).shuffled()
+            if (isMultiplayer) {
+                networkManager.disconnect()
+                val intent = Intent(this, MainActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                startActivity(intent)
+                finish()
+            } else {
+                val allCharacters = Character.getDefaultCharacters(context = this).shuffled()
 
-            val newPlayerHand = allCharacters.take(8)
-            val newCpuHand = allCharacters.drop(8).take(8)
+                val newPlayerHand = allCharacters.take(8)
+                val newCpuHand = allCharacters.drop(8).take(8)
 
-            val freshPlayer = currentPlayer.copy(hand = newPlayerHand)
+                val freshPlayer = currentPlayer.copy(hand = newPlayerHand)
+                val freshOpponent = opponentPlayer.copy(hand = newCpuHand)
 
-            val freshOpponent = opponentPlayer.copy(hand = newCpuHand)
-
-            val intent = Intent(this, TeamSetupActivity::class.java)
-
-            intent.putExtra("CURRENT_PLAYER", freshPlayer)
-            intent.putExtra("OPPONENT_PLAYER", freshOpponent)
-            intent.putExtra("MAX_ROUNDS", gameState?.totalRounds ?: 10)
-
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            finish()
+                val intent = Intent(this, TeamSetupActivity::class.java)
+                intent.putExtra("CURRENT_PLAYER", freshPlayer)
+                intent.putExtra("OPPONENT_PLAYER", freshOpponent)
+                intent.putExtra("MAX_ROUNDS", gameState?.totalRounds ?: 10)
+                intent.putExtra("IS_MULTIPLAYER", false)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }
         }
     }
 
@@ -480,6 +594,13 @@ class BattleActivity : AppCompatActivity() {
                 .setStartDelay((index * 100).toLong())
                 .setInterpolator(android.view.animation.DecelerateInterpolator())
                 .start()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (isMultiplayer) {
+            networkManager.disconnect()
         }
     }
 }

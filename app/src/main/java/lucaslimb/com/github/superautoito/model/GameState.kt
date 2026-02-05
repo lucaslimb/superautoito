@@ -15,7 +15,8 @@ data class GameState(
     val opponentReserve: List<Character>,
     val playerCanBuyCard: Boolean = false,
     val lastRoundWinner: Int = 0, // 1=player, -1=opponent, 0=empate
-    val nextRoundBannedCharacters: List<Int> = emptyList()
+    val nextRoundBannedCharacters: List<Int> = emptyList(),
+    val isMultiplayer: Boolean = false
 ) : Parcelable {
 
     fun isGameOver(): Boolean {

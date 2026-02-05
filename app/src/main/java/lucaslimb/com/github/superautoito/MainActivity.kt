@@ -26,8 +26,8 @@ import lucaslimb.com.github.superautoito.model.Character
 import lucaslimb.com.github.superautoito.model.Player
 import lucaslimb.com.github.superautoito.network.NetworkEvent
 import lucaslimb.com.github.superautoito.network.NetworkManager
-import lucaslimb.com.github.superautoito.screens.GameActivity
 import lucaslimb.com.github.superautoito.screens.GameTipsActivity
+import lucaslimb.com.github.superautoito.screens.TeamSetupActivity
 import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
@@ -302,55 +302,89 @@ class MainActivity : AppCompatActivity() {
 
     private fun startGameNetworked() {
         lifecycleScope.launch(Dispatchers.IO) {
-            val allCharacters = Character.getDefaultCharacters(context = this@MainActivity)
-            val shuffled = allCharacters.shuffled()
-            val player1Cards = shuffled.take(8)
-            val player2Cards = shuffled.drop(8).take(8)
+            try {
+                kotlinx.coroutines.withTimeout(20000L) {
 
-            val currentPlayer = Player(
-                id = UUID.randomUUID().toString(),
-                name = getString(R.string.player_you_no_accent),
-                hand = if (isHost) player1Cards else player2Cards,
-                isHost = isHost
-            )
+                    if (isHost) {
+                        // ===== HOST: CONTROLA TUDO =====
+                        val allCharacters = Character.getDefaultCharacters(context = this@MainActivity)
+                        val shuffled = allCharacters.shuffled()
 
-            var opponentPlayer: Player? = null
+                        val hostCards = shuffled.take(8)
+                        val clientCards = shuffled.drop(8).take(8)
 
-            if (isHost) {
-                val myJson = gson.toJson(currentPlayer)
-                val sent = networkManager.sendMessage(myJson)
+                        val hostPlayer = Player(
+                            id = "host",
+                            name = getString(R.string.player_you_no_accent),
+                            hand = hostCards,
+                            isHost = true
+                        )
 
-                if (sent) {
-                    val opponentJson = networkManager.receiveMessage()
-                    if (opponentJson != null) {
-                        opponentPlayer = gson.fromJson(opponentJson, Player::class.java)
+                        val clientPlayer = Player(
+                            id = "client",
+                            name = getString(R.string.opponent_name),
+                            hand = clientCards,
+                            isHost = false
+                        )
+
+                        val initialData = mapOf(
+                            "myCards" to clientCards,
+                            "opponentCards" to hostCards,
+                            "rounds" to (etHostRounds.text.toString().toIntOrNull() ?: 10)
+                        )
+
+                        val dataJson = gson.toJson(initialData)
+                        val sent = networkManager.sendMessage(dataJson)
+
+                        if (!sent) throw Exception("Falha ao enviar dados iniciais")
+
+                        val confirm = networkManager.receiveMessage()
+                            ?: throw Exception("Cliente não confirmou")
+
+                        val finalRounds = etHostRounds.text.toString().toIntOrNull() ?: 10
+                        navigateToGame(hostPlayer, clientPlayer, finalRounds, isMultiplayer = true)
+
+                    } else {
+                        val dataJson = networkManager.receiveMessage()
+                            ?: throw Exception("Não recebeu dados do host")
+
+                        val data = gson.fromJson(dataJson, Map::class.java)
+                        val myCardsJson = gson.toJson(data["myCards"])
+                        val opponentCardsJson = gson.toJson(data["opponentCards"])
+                        val rounds = (data["rounds"] as Double).toInt()
+
+                        val myCards = gson.fromJson(myCardsJson, Array<Character>::class.java).toList()
+                        val opponentCards = gson.fromJson(opponentCardsJson, Array<Character>::class.java).toList()
+
+                        val myPlayer = Player(
+                            id = "client",
+                            name = getString(R.string.player_you_no_accent),
+                            hand = myCards,
+                            isHost = false
+                        )
+
+                        val hostPlayer = Player(
+                            id = "host",
+                            name = getString(R.string.opponent_name),
+                            hand = opponentCards,
+                            isHost = true
+                        )
+
+                        networkManager.sendMessage(gson.toJson(mapOf("status" to "ready")))
+
+                        navigateToGame(myPlayer, hostPlayer, rounds, isMultiplayer = true)
                     }
                 }
-            } else {
-                val hostJson = networkManager.receiveMessage()
-                if (hostJson != null) {
-                    val hostPlayer = gson.fromJson(hostJson, Player::class.java)
-                    opponentPlayer = hostPlayer
-                    val myJson = gson.toJson(currentPlayer)
-                    networkManager.sendMessage(myJson)
-                }
-            }
 
-            if (opponentPlayer != null) {
-                val finalRounds = if (isHost) {
-                    etHostRounds.text.toString().toIntOrNull() ?: 10
-                } else {
-                    selectedRounds
-                }
-
-                navigateToGame(currentPlayer, opponentPlayer, finalRounds)
-            } else {
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        getString(R.string.sync_error),
-                        Toast.LENGTH_LONG
-                    ).show()
+                    val errorMsg = when(e) {
+                        is kotlinx.coroutines.TimeoutCancellationException -> getString(R.string.error_timeout)
+                        else -> getString(R.string.sync_error) + ": ${e.message}"
+                    }
+
+                    Toast.makeText(this@MainActivity, errorMsg, Toast.LENGTH_LONG).show()
+
                     networkManager.disconnect()
                     tvStatus.visibility = View.GONE
                     radioGroup.visibility = View.VISIBLE
@@ -360,12 +394,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun navigateToGame(player: Player, opponent: Player, rounds: Int = 10) {
+    private suspend fun navigateToGame(
+        player: Player,
+        opponent: Player,
+        rounds: Int = 10,
+        isMultiplayer: Boolean = false
+    ) {
         withContext(Dispatchers.Main) {
-            val intent = Intent(this@MainActivity, GameActivity::class.java)
+            val intent = Intent(this@MainActivity, TeamSetupActivity::class.java)
             intent.putExtra("CURRENT_PLAYER", player)
             intent.putExtra("OPPONENT_PLAYER", opponent)
             intent.putExtra("MAX_ROUNDS", rounds)
+            intent.putExtra("IS_MULTIPLAYER", isMultiplayer)
             startActivity(intent)
             finish()
         }

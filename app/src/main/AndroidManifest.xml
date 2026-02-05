@@ -29,10 +29,6 @@
         </activity>
 
         <activity
-            android:name=".screens.GameActivity"
-            android:exported="false" />
-
-        <activity
             android:name=".screens.TeamSetupActivity"
             android:exported="false"
             android:screenOrientation="landscape" />

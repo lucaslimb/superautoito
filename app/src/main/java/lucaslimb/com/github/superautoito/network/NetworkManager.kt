@@ -27,49 +27,42 @@ class NetworkManager(private val context: Context) {
     private var writer: PrintWriter? = null
     private var reader: BufferedReader? = null
 
+    private var internalRegistrationListener: NsdManager.RegistrationListener? = null
+
     companion object {
-        // Nome do serviço deve ser único e seguir padrão DNS-SD
         private const val SERVICE_TYPE = "_superautoito._tcp"
         private const val TAG = "NetworkManager"
     }
 
-    // AGORA RECEBE roomName e rounds
     fun registerService(roomName: String, rounds: Int): Flow<NetworkEvent> = callbackFlow {
         try {
-            // 0 = O Sistema Operacional escolhe uma porta livre automaticamente
             serverSocket = ServerSocket(0)
             val assignedPort = serverSocket!!.localPort
 
             val serviceInfo = NsdServiceInfo().apply {
-                // Nome do serviço na rede (deve ser único, o android pode adicionar sufixos se repetir)
                 serviceName = "Ito-$roomName"
                 serviceType = SERVICE_TYPE
                 port = assignedPort
 
-                // ATRIBUTOS EXTRAS (A mágica acontece aqui)
-                // Enviamos o nome da sala e rounds via TXT Record do DNS-SD
                 setAttribute("room", roomName)
                 setAttribute("rounds", rounds.toString())
             }
 
-            val registrationListener = object : NsdManager.RegistrationListener {
+            internalRegistrationListener = object : NsdManager.RegistrationListener {
                 override fun onRegistrationFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
                     trySend(NetworkEvent.Error("Falha registro NSD: $errorCode"))
                 }
 
                 override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
-                    // Ignorar erros de unregister ao fechar app
                 }
 
                 override fun onServiceRegistered(serviceInfo: NsdServiceInfo?) {
                     trySend(NetworkEvent.ServiceRegistered)
                     Log.d(TAG, "Serviço registrado na porta $assignedPort")
 
-                    // Thread dedicada para aceitar conexão (Blocking Call)
                     Thread {
                         try {
                             trySend(NetworkEvent.WaitingForPlayer)
-                            // Bloqueia até alguém conectar
                             val socket = serverSocket?.accept()
 
                             if (socket != null) {
@@ -88,7 +81,7 @@ class NetworkManager(private val context: Context) {
                 override fun onServiceUnregistered(serviceInfo: NsdServiceInfo?) {}
             }
 
-            nsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
+            nsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, internalRegistrationListener)
 
         } catch (e: Exception) {
             trySend(NetworkEvent.Error("Erro server socket: ${e.message}"))
@@ -109,10 +102,7 @@ class NetworkManager(private val context: Context) {
             override fun onDiscoveryStopped(serviceType: String?) {}
 
             override fun onServiceFound(serviceInfo: NsdServiceInfo?) {
-                // Filtra para garantir que é o nosso jogo
                 if (serviceInfo?.serviceType?.contains("_superautoito") == true) {
-                    // Precisamos RESOLVER o serviço para pegar os Atributos (Rounds/RoomName)
-                    // Discovery puro só dá o nome e tipo.
                     nsdManager.resolveService(serviceInfo, object : NsdManager.ResolveListener {
                         override fun onResolveFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
                             Log.e(TAG, "Resolve falhou na busca: $errorCode")
@@ -139,7 +129,6 @@ class NetworkManager(private val context: Context) {
     fun connectToService(serviceInfo: NsdServiceInfo): Flow<NetworkEvent> = callbackFlow {
         Thread {
             try {
-                // Usa o host e porta resolvidos pelo NSD
                 val socket = Socket(serviceInfo.host, serviceInfo.port)
                 clientSocket = socket
                 setupStreams(socket)
@@ -153,16 +142,15 @@ class NetworkManager(private val context: Context) {
     }
 
     private fun setupStreams(socket: Socket) {
-        // AutoFlush = true é crucial para enviar imediatamente
         writer = PrintWriter(socket.getOutputStream(), true)
         reader = BufferedReader(InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))
     }
 
-    // TRANSFORMADO EM SUSPEND para rodar em IO
     suspend fun sendMessage(message: String): Boolean = withContext(Dispatchers.IO) {
         try {
             if (writer != null && !clientSocket!!.isClosed) {
-                writer?.println(message)
+                val sanitizedMessage = message.replace("\n", "")
+                writer?.println(sanitizedMessage)
                 return@withContext true
             }
             return@withContext false
@@ -172,7 +160,6 @@ class NetworkManager(private val context: Context) {
         }
     }
 
-    // TRANSFORMADO EM SUSPEND e trata nulos
     suspend fun receiveMessage(): String? = withContext(Dispatchers.IO) {
         try {
             return@withContext reader?.readLine()
@@ -184,20 +171,22 @@ class NetworkManager(private val context: Context) {
 
     fun disconnect() {
         try {
-            nsdManager.unregisterService(object : NsdManager.RegistrationListener { // Dummy listener para unregister
-                override fun onRegistrationFailed(p0: NsdServiceInfo?, p1: Int) {}
-                override fun onUnregistrationFailed(p0: NsdServiceInfo?, p1: Int) {}
-                override fun onServiceRegistered(p0: NsdServiceInfo?) {}
-                override fun onServiceUnregistered(p0: NsdServiceInfo?) {}
-            })
-        } catch (e: Exception) { /* Já estava sem registro */ }
+            internalRegistrationListener?.let { listener ->
+                nsdManager.unregisterService(listener)
+                internalRegistrationListener = null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao desregistrar serviço (pode já estar fechado)", e)
+        }
 
         try {
             writer?.close()
             reader?.close()
             clientSocket?.close()
             serverSocket?.close()
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao fechar sockets", e)
+        }
     }
 }
 
