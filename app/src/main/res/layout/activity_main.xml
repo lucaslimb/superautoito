@@ -5,31 +5,31 @@
     android:orientation="vertical"
     android:gravity="center"
     android:padding="16dp"
-    android:background="#1a1a1a">
+    android:background="#101010">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SUPER AUTO ITO"
+        android:text="@string/app_name"
         android:textSize="32sp"
         android:textStyle="bold"
-        android:textColor="@color/bronze"
+        android:textColor="@color/dark_red"
         android:layout_marginBottom="16dp"
         android:fontFamily="sans-serif-black"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Junji Ito Cards Autobattle"
+        android:text="@string/app_subtitle"
         android:textSize="16sp"
-        android:textColor="#cccccc"
+        android:textColor="#ffffff"
         android:layout_marginBottom="48dp"/>
 
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:backgroundTint="#2a2a2a"
+        android:backgroundTint="#000000"
         android:elevation="8dp">
 
         <LinearLayout
@@ -41,7 +41,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Modo de Jogo:"
+                android:text="@string/game_mode"
                 android:textSize="16sp"
                 android:textColor="#ffffff"
                 android:layout_marginBottom="12dp"/>
@@ -58,7 +58,7 @@
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="Criar"
+                    android:text="@string/mode_create"
                     android:textColor="#ffffff"
                     android:buttonTint="@color/silver"/>
 
@@ -67,7 +67,7 @@
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="Entrar"
+                    android:text="@string/mode_join"
                     android:textColor="#ffffff"
                     android:buttonTint="@color/silver"/>
 
@@ -76,8 +76,8 @@
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="CPU"
-                    android:textColor="@color/bronze"
+                    android:text="@string/mode_cpu"
+                    android:textColor="@color/dark_red"
                     android:buttonTint="@color/silver"/>
 
             </RadioGroup>
@@ -98,7 +98,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Nome da Sala:"
+                    android:text="@string/room_name"
                     android:textColor="#cccccc"
                     android:textSize="12sp"/>
 
@@ -106,7 +106,7 @@
                     android:id="@+id/et_room_name"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
-                    android:hint="Ex: Arena Suprema"
+                    android:hint="@string/room_name_hint"
                     android:textColor="#ffffff"
                     android:textColorHint="#666666"
                     android:background="@android:color/transparent"
@@ -115,7 +115,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Número de Rounds:"
+                    android:text="@string/rounds_number"
                     android:textColor="#cccccc"
                     android:textSize="12sp"
                     android:layout_marginTop="8dp"/>
@@ -124,7 +124,7 @@
                     android:id="@+id/et_host_rounds"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
-                    android:hint="Ex: 5"
+                    android:hint="@string/rounds_example_5"
                     android:text="10"
                     android:textColor="#ffffff"
                     android:textColorHint="#666666"
@@ -142,7 +142,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Salas Encontradas:"
+                    android:text="@string/found_rooms"
                     android:textColor="#cccccc"
                     android:layout_marginBottom="8dp"/>
 
@@ -165,7 +165,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Buscando salas..."
+                    android:text="@string/searching_rooms"
                     android:gravity="center"
                     android:textSize="10sp"
                     android:textColor="#666666"/>
@@ -181,7 +181,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Número de Rounds:"
+                    android:text="@string/rounds_number"
                     android:textColor="#cccccc"
                     android:textSize="12sp"/>
 
@@ -189,7 +189,7 @@
                     android:id="@+id/et_solo_rounds"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
-                    android:hint="Ex: 10"
+                    android:hint="@string/rounds_example_10"
                     android:text="10"
                     android:textColor="#ffffff"
                     android:textColorHint="#666666"
@@ -201,7 +201,7 @@
                 android:id="@+id/tv_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Aguardando..."
+                android:text="@string/waiting"
                 android:textSize="14sp"
                 android:textColor="#ff4444"
                 android:layout_gravity="center"
@@ -222,10 +222,10 @@
                 android:id="@+id/btn_start"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:text="SELECIONE UM MODO"
+                android:text="@string/select_mode"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                android:backgroundTint="#444444"
+                android:backgroundTint="@color/dark_red"
                 android:textColor="#aaaaaa"
                 android:enabled="false"/>
 
@@ -236,7 +236,7 @@
         android:id="@+id/btn_configs"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="How to play"
+        android:text="@string/how_to_play"
         android:textAllCaps="true"
         android:textSize="12sp"
         android:backgroundTint="@android:color/transparent"
@@ -246,7 +246,7 @@
         android:id="@+id/btn_cancel"
         android:layout_width="100dp"
         android:layout_height="48dp"
-        android:text="SAIR"
+        android:text="@string/exit"
         android:textSize="14sp"
         android:backgroundTint="#333333"
         android:textColor="#ffffff"/>
@@ -254,7 +254,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="1.0 - Local network version"
+        android:text="@string/version_info"
         android:textSize="12sp"
         android:textColor="#666666"
         android:layout_marginTop="24dp"/>
@@ -262,7 +262,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="github.com/lucaslimb"
+        android:text="@string/github_link"
         android:linksClickable="true"
         android:textSize="12sp"
         android:textColor="#666666"
@@ -271,7 +271,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="lucasdelimabzr@gmail.com"
+        android:text="@string/email_contact"
         android:linksClickable="true"
         android:textSize="12sp"
         android:textColor="#666666"

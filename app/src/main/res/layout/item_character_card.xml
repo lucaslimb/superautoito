@@ -38,7 +38,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:scaleType="fitXY"
-                    android:src="@drawable/ic_character_placeholder"
+                    android:src="@drawable/card"
                     android:contentDescription="Character Image"/>
             </FrameLayout>
 

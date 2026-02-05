@@ -27,7 +27,7 @@ import lucaslimb.com.github.superautoito.model.Player
 import lucaslimb.com.github.superautoito.network.NetworkEvent
 import lucaslimb.com.github.superautoito.network.NetworkManager
 import lucaslimb.com.github.superautoito.screens.GameActivity
-import lucaslimb.com.github.superautoito.screens.toRoman
+import lucaslimb.com.github.superautoito.screens.GameTipsActivity
 import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var rvRoomList: RecyclerView
     private lateinit var pbSearching: ProgressBar
+    private lateinit var btnConfigs: Button
     private val roomAdapter = RoomAdapter { serviceInfo -> onRoomSelected(serviceInfo) }
 
     private lateinit var networkManager: NetworkManager
@@ -86,6 +87,8 @@ class MainActivity : AppCompatActivity() {
         rvRoomList.layoutManager = LinearLayoutManager(this)
         rvRoomList.adapter = roomAdapter
 
+        btnConfigs = findViewById(R.id.btn_configs)
+
         etRoomName.setText("${UUID.randomUUID() .toString().replace("-", "").take(8)}")
     }
 
@@ -102,6 +105,11 @@ class MainActivity : AppCompatActivity() {
             networkManager.disconnect()
             finish()
         }
+
+        btnConfigs.setOnClickListener {
+            val intent = Intent(this, GameTipsActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun updateUIState(checkedId: Int) {
@@ -113,24 +121,24 @@ class MainActivity : AppCompatActivity() {
         roomAdapter.clearSelection()
 
         btnStart.isEnabled = true
-        btnStart.setBackgroundColor(getColor(R.color.bronze))
+        btnStart.setBackgroundColor(getColor(R.color.dark_red))
         btnStart.setTextColor(getColor(R.color.silver))
 
         when (checkedId) {
             R.id.radio_host -> {
                 layoutHost.visibility = View.VISIBLE
-                btnStart.text = "CRIAR SALA"
+                btnStart.text = getString(R.string.create_room)
             }
             R.id.radio_join -> {
                 layoutJoin.visibility = View.VISIBLE
-                btnStart.text = "CONECTAR"
+                btnStart.text = getString(R.string.connect)
                 btnStart.isEnabled = false
                 btnStart.setBackgroundColor(getColor(android.R.color.darker_gray))
                 startSearchingRooms()
             }
             R.id.radio_solo -> {
                 layoutSolo.visibility = View.VISIBLE
-                btnStart.text = "JOGAR SOLO"
+                btnStart.text = getString(R.string.play_solo)
             }
         }
     }
@@ -141,10 +149,12 @@ class MainActivity : AppCompatActivity() {
         when (checkedId) {
             R.id.radio_host -> {
                 val roomName = etRoomName.text.toString()
-                val rounds = etHostRounds.text.toString().toIntOrNull() ?: 10
+                var rounds = etHostRounds.text.toString().toIntOrNull() ?: 10
+
+                rounds = rounds.coerceIn(1, 20)
 
                 if (roomName.isBlank()) {
-                    Toast.makeText(this, "Digite um nome para a sala", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.toast_enter_room_name), Toast.LENGTH_SHORT).show()
                     return
                 }
                 isHost = true
@@ -157,7 +167,9 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             R.id.radio_solo -> {
-                val rounds = etSoloRounds.text.toString().toIntOrNull() ?: 10
+                var rounds = etSoloRounds.text.toString().toIntOrNull() ?: 10
+                rounds = rounds.coerceIn(1, 20)
+
                 startSoloMode(rounds)
             }
         }
@@ -165,10 +177,9 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun startHosting(roomName: String, rounds: Int) {
-        setLoadingState("Criando sala '$roomName'...")
+        setLoadingState(getString(R.string.creating_room, roomName))
 
         lifecycleScope.launch {
-            // Passamos roomName e rounds para serem registrados no NSD
             networkManager.registerService(roomName, rounds).collect { event ->
                 handleNetworkEvent(event)
             }
@@ -176,7 +187,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startSearchingRooms() {
-        // Limpa lista anterior
         roomAdapter.submitList(emptyList())
 
         lifecycleScope.launch {
@@ -184,7 +194,6 @@ class MainActivity : AppCompatActivity() {
                 when (event) {
                     is NetworkEvent.ServiceFound -> {
                         withContext(Dispatchers.Main) {
-                            // Adiciona à lista do RecyclerView
                             roomAdapter.addService(event.serviceInfo)
                         }
                     }
@@ -194,23 +203,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private var selectedRounds: Int = 10 // Variável global na Activity para guardar o valor
+    private var selectedRounds: Int = 10
 
     private fun onRoomSelected(serviceInfo: NsdServiceInfo) {
         selectedServiceInfo = serviceInfo
-
-        // Ler os rounds dos metadados do serviço selecionado
         val roundsStr = serviceInfo.attributes["rounds"]?.let { String(it) }
         selectedRounds = roundsStr?.toIntOrNull() ?: 10
 
         btnStart.isEnabled = true
         val roomName = serviceInfo.attributes["room"]?.let { String(it) } ?: serviceInfo.serviceName
-        btnStart.text = "CONECTAR: $roomName"
+        btnStart.text = getString(R.string.connect_room_format, roomName)
         btnStart.setBackgroundColor(getColor(android.R.color.holo_green_dark))
     }
 
     private fun connectToHost(serviceInfo: NsdServiceInfo) {
-        setLoadingState("Conectando a ${serviceInfo.serviceName}...")
+        setLoadingState(getString(R.string.connecting_to, serviceInfo.serviceName))
 
         lifecycleScope.launch {
             networkManager.connectToService(serviceInfo).collect { connectEvent ->
@@ -220,12 +227,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startSoloMode(rounds: Int) {
-        setLoadingState("Iniciando modo Solo ($rounds rounds)...")
+        setLoadingState(getString(R.string.starting_solo, rounds))
 
         lifecycleScope.launch(Dispatchers.IO) {
             delay(1000)
 
-            val allCharacters = Character.Companion.getDefaultCharacters()
+            val allCharacters = Character.Companion.getDefaultCharacters(context = this@MainActivity)
             val shuffled = allCharacters.shuffled()
 
             val player1Cards = shuffled.take(8)
@@ -233,14 +240,14 @@ class MainActivity : AppCompatActivity() {
 
             val currentPlayer = Player(
                 id = UUID.randomUUID().toString(),
-                name = "Você",
+                name = getString(R.string.player_you),
                 hand = player1Cards,
                 isHost = true
             )
 
             val cpuPlayer = Player(
                 id = UUID.randomUUID().toString(),
-                name = "CPU",
+                name = getString(R.string.player_cpu),
                 hand = player2Cards,
                 isHost = false
             )
@@ -267,20 +274,20 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.Main) {
             when (event) {
                 is NetworkEvent.ServiceRegistered -> {
-                    tvStatus.text = "Sala criada! Aguardando oponente..."
+                    tvStatus.text = getString(R.string.room_created_waiting)
                 }
                 is NetworkEvent.WaitingForPlayer -> {
-                    tvStatus.text = "Esperando alguém conectar..."
+                    tvStatus.text = getString(R.string.waiting_for_player)
                 }
                 is NetworkEvent.Connected -> {
-                    tvStatus.text = "Conectado! Sincronizando..."
+                    tvStatus.text = getString(R.string.connected_sync)
                     progressBarMain.visibility = View.GONE
                     delay(1000)
                     startGameNetworked()
                 }
                 is NetworkEvent.Error -> {
                     progressBarMain.visibility = View.GONE
-                    tvStatus.text = "Erro: ${event.message}"
+                    tvStatus.text = getString(R.string.error_prefix, event.message)
                     Toast.makeText(this@MainActivity, event.message, Toast.LENGTH_LONG).show()
 
                     delay(2000)
@@ -295,14 +302,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun startGameNetworked() {
         lifecycleScope.launch(Dispatchers.IO) {
-            val allCharacters = Character.getDefaultCharacters()
+            val allCharacters = Character.getDefaultCharacters(context = this@MainActivity)
             val shuffled = allCharacters.shuffled()
             val player1Cards = shuffled.take(8)
             val player2Cards = shuffled.drop(8).take(8)
 
             val currentPlayer = Player(
                 id = UUID.randomUUID().toString(),
-                name = "Voce",
+                name = getString(R.string.player_you_no_accent),
                 hand = if (isHost) player1Cards else player2Cards,
                 isHost = isHost
             )
@@ -336,10 +343,14 @@ class MainActivity : AppCompatActivity() {
                     selectedRounds
                 }
 
-                navigateToGame(currentPlayer, opponentPlayer!!, finalRounds)
+                navigateToGame(currentPlayer, opponentPlayer, finalRounds)
             } else {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@MainActivity, "Erro na sincronização dos dados", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.sync_error),
+                        Toast.LENGTH_LONG
+                    ).show()
                     networkManager.disconnect()
                     tvStatus.visibility = View.GONE
                     radioGroup.visibility = View.VISIBLE
@@ -378,7 +389,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun addService(service: NsdServiceInfo) {
-            // Evita duplicados
             if (services.none { it.serviceName == service.serviceName }) {
                 services.add(service)
                 notifyItemInserted(services.size - 1)
@@ -400,10 +410,6 @@ class MainActivity : AppCompatActivity() {
             val service = services[position]
             val textView = holder.itemView.findViewById<TextView>(android.R.id.text1)
 
-            // DECODIFICANDO OS ATRIBUTOS DO NSD
-            // O Android < API 34 usa getAttributes que retorna Map<String, ByteArray>
-            // Mas a classe NsdServiceInfo tem helpers diretos em versões novas ou legacy
-
             val roomName = try {
                 service.attributes["room"]?.let { String(it) } ?: service.serviceName
             } catch (e: Exception) { service.serviceName }
@@ -412,8 +418,7 @@ class MainActivity : AppCompatActivity() {
                 service.attributes["rounds"]?.let { String(it) } ?: "?"
             } catch (e: Exception) { "?" }
 
-            // Exibe: "Arena Suprema (10 Rounds)"
-            textView.text = "$roomName ($rounds Rounds)"
+            textView.text = getString(R.string.room_list_item, roomName, rounds)
             textView.setTextColor(getColor(android.R.color.white))
 
             holder.itemView.setOnClickListener {

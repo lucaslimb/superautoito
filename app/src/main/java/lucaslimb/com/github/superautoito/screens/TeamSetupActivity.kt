@@ -2,15 +2,20 @@ package lucaslimb.com.github.superautoito.screens
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.graphics.Color
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import lucaslimb.com.github.superautoito.MainActivity
 import lucaslimb.com.github.superautoito.R
 import lucaslimb.com.github.superautoito.model.Player
 import lucaslimb.com.github.superautoito.model.Character
@@ -24,8 +29,9 @@ class TeamSetupActivity : AppCompatActivity() {
 
     private lateinit var currentPlayer: Player
     private lateinit var opponentPlayer: Player
-
+    private lateinit var opponentReserve: MutableList<Character>
     private lateinit var etTeamName: EditText
+    private lateinit var tvInstructions: TextView
     private lateinit var mainCards: MutableList<Character>
     private lateinit var reserveCards: MutableList<Character>
 
@@ -40,7 +46,6 @@ class TeamSetupActivity : AppCompatActivity() {
 
     private lateinit var tvCardInfo: TextView
     private lateinit var btnConfirm: Button
-    private lateinit var tvInstructions: TextView
 
     private var lastClickTime: Long = 0
     private var lastClickedIndex: Int = -1
@@ -48,13 +53,14 @@ class TeamSetupActivity : AppCompatActivity() {
     private val DOUBLE_CLICK_DELAY = 500L
 
     private var gameState: GameState? = null
-    private var mustSwapCount = 0
-    private val REQUIRED_SWAPS = 2
+    private var initialTeamSnapshot: List<Int> = emptyList()
+    private var maxRounds: Int = 20
+    private lateinit var btnExit: Button
 
     private val feedbackHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val resetTextRunnable = Runnable { tvInstructions.text = defaultText }
 
-    private val defaultText = "Monte seu time!"
+    private val defaultText by lazy { getString(R.string.default_instruction) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,62 +68,111 @@ class TeamSetupActivity : AppCompatActivity() {
         setContentView(R.layout.activity_team_setup)
 
         gameState = intent.getParcelableExtra("GAME_STATE")
+        initViews()
 
         if (gameState != null) {
+            maxRounds = gameState!!.totalRounds
             mainCards = gameState!!.playerTeam.toMutableList()
             reserveCards = gameState!!.playerReserve.toMutableList()
 
+            val cpuMain = gameState!!.opponentTeam.toMutableList()
+            val cpuRes = gameState!!.opponentReserve.toMutableList()
+
+            val (evolvedCpuTeam, evolvedCpuReserve) = simulateCpuAction(cpuMain, cpuRes)
+
+            opponentReserve = evolvedCpuReserve
+
             opponentPlayer = Player(
                 id = "opponent",
-                name = "CPU",
-                hand = generateOpponentTeam()
+                name = getString(R.string.cpu_name),
+                hand = evolvedCpuTeam
             )
 
             currentPlayer = Player(
                 id = "player",
-                name = intent.getStringExtra("PLAYER_NAME") ?: "Jogador",
+                name = intent.getStringExtra("PLAYER_NAME")
+                    ?: getString(R.string.default_player_name),
                 hand = mainCards
             )
+
+            applyBans(gameState!!.nextRoundBannedCharacters)
+
+            initialTeamSnapshot = mainCards.map { it.id }
         } else {
+            maxRounds = intent.getIntExtra("MAX_ROUNDS", 10)
             currentPlayer = intent.getParcelableExtra("CURRENT_PLAYER") ?: return finish()
-            opponentPlayer = intent.getParcelableExtra("OPPONENT_PLAYER") ?: return finish()
+
+            val passedOpponent = intent.getParcelableExtra<Player>("OPPONENT_PLAYER") ?: return finish()
 
             mainCards = currentPlayer.hand.take(6).toMutableList()
             reserveCards = currentPlayer.hand.drop(6).take(2).toMutableList()
-        }
 
+            val opponentHand = passedOpponent.hand
+            val cpuMain = opponentHand.take(6).toMutableList()
+            opponentReserve = opponentHand.drop(6).take(2).toMutableList()
+
+            opponentPlayer = passedOpponent.copy(hand = cpuMain)
+        }
 
         shopCard = generateRandomShopCard()
 
-        initViews()
         updateStatsDisplay()
         setupCards()
         setupListeners()
 
         if (gameState?.playerCanBuyCard == true) {
-            showFeedbackMessage("DERROTA! Você pode comprar 1 carta da loja!")
+            showFeedbackMessage(getString(R.string.defeat_shop_available))
         }
     }
 
-    private fun generateOpponentTeam(): List<Character> {
-        return Character.getDefaultCharacters().shuffled().take(6)
+    private fun simulateCpuAction(
+        team: MutableList<Character>,
+        reserve: MutableList<Character>
+    ): Pair<MutableList<Character>, MutableList<Character>> {
+
+        if (reserve.isEmpty() || team.isEmpty()) return Pair(team, reserve)
+
+        repeat(2) {
+            val mainIndex = (0 until team.size).random()
+            val reserveIndex = (0 until reserve.size).random()
+
+            val temp = team[mainIndex]
+            team[mainIndex] = reserve[reserveIndex]
+            reserve[reserveIndex] = temp
+        }
+
+        //  CPU compra uma carta da loja se derrotado (Lógica simples: troca 1 reserva por aleatória)
+        // val randomChar = Character.getDefaultCharacters().random()
+        // reserve[0] = randomChar
+
+        return Pair(team, reserve)
     }
 
     private fun updateStatsDisplay() {
-        val state = gameState ?: return
+        val current = gameState?.currentRound ?: 1
+        val total = gameState?.totalRounds ?: maxRounds
+        val wins = gameState?.playerWins ?: 0
+        val losses = gameState?.playerLosses ?: 0
 
         findViewById<TextView>(R.id.tv_round_info).text =
-            "Round ${state.currentRound}/${state.totalRounds}"
+            getString(R.string.round_info_format, current, total)
 
         findViewById<TextView>(R.id.tv_win_loss).text =
-            "V: ${state.playerWins} | D: ${state.playerLosses}"
+            getString(R.string.win_loss_format, wins, losses)
     }
 
     private fun generateRandomShopCard(): Character {
-        val allCharacters = Character.getDefaultCharacters()
+        val allCharacters = Character.getDefaultCharacters(context = this)
 
-        val usedIds = (mainCards + reserveCards).map { it.id }
+        val playerIds = (mainCards + reserveCards).map { it.id }
 
+        val opponentIds = if (::opponentReserve.isInitialized) {
+            (opponentPlayer.hand + opponentReserve).map { it.id }
+        } else {
+            opponentPlayer.hand.map { it.id }
+        }
+
+        val usedIds = playerIds + opponentIds
         val available = allCharacters.filter { it.id !in usedIds }
 
         return if (available.isNotEmpty()) available.random() else allCharacters.random()
@@ -125,7 +180,7 @@ class TeamSetupActivity : AppCompatActivity() {
 
     private fun handleShopTransaction(currentIndex: Int, currentZone: CardZone) {
         if (gameState?.playerCanBuyCard != true) {
-            showFeedbackMessage("Loja disponível apenas após DERROTA!")
+            showFeedbackMessage(getString(R.string.shop_only_after_defeat))
             resetAllSelections()
             return
         }
@@ -144,29 +199,25 @@ class TeamSetupActivity : AppCompatActivity() {
         showPowerDescription(reserveCards[reserveIndex])
     }
 
-    private fun swapTeamCards(currentIndex: Int, currentZone: CardZone) {
-        val mainIdx = if (selectedZone == CardZone.MAIN) selectedIndex!! else currentIndex
-        val reserveIdx = if (selectedZone == CardZone.RESERVE) selectedIndex!! else currentIndex
+    private fun swapMainAndReserve(mainIndex: Int, reserveIndex: Int) {
+        val cardFromReserve = reserveCards[reserveIndex]
 
-        val temp = mainCards[mainIdx]
-        mainCards[mainIdx] = reserveCards[reserveIdx]
-        reserveCards[reserveIdx] = temp
+        if (isCharacterBanned(cardFromReserve)) {
+            showFeedbackMessage( getString(R.string.banned_character, cardFromReserve.name))
+            resetAllSelections()
+            return
+        }
 
-        setupCardView(mainCardViews[mainIdx], mainCards[mainIdx], mainIdx, CardZone.MAIN)
-        setupCardView(reserveCardViews[reserveIdx], reserveCards[reserveIdx], reserveIdx, CardZone.RESERVE)
+        val temp = mainCards[mainIndex]
+        mainCards[mainIndex] = reserveCards[reserveIndex]
+        reserveCards[reserveIndex] = temp
 
-        // Incrementar contador de trocas
-        mustSwapCount++
+        setupCardView(mainCardViews[mainIndex], mainCards[mainIndex], mainIndex, CardZone.MAIN)
+        setupCardView(reserveCardViews[reserveIndex], reserveCards[reserveIndex], reserveIndex, CardZone.RESERVE)
 
         resetAllSelections()
 
-        if(gameState?.currentRound != 1) {
-            if (mustSwapCount < REQUIRED_SWAPS) {
-                showFeedbackMessage("Troca ${mustSwapCount}/$REQUIRED_SWAPS completa!")
-            } else {
-                showFeedbackMessage("Trocas obrigatórias concluídas!")
-            }
-        }
+        tvInstructions.text = defaultText
     }
 
     private fun initViews() {
@@ -174,6 +225,7 @@ class TeamSetupActivity : AppCompatActivity() {
         btnConfirm = findViewById(R.id.btn_confirm)
         tvCardInfo = findViewById(R.id.tv_card_info)
         etTeamName = findViewById(R.id.et_team_name)
+        btnExit = findViewById(R.id.btn_exit)
 
         mainCardViews.add(findViewById(R.id.card_main_1))
         mainCardViews.add(findViewById(R.id.card_main_2))
@@ -207,6 +259,8 @@ class TeamSetupActivity : AppCompatActivity() {
             imgCharacter.setImageResource(R.drawable.card)
             tvAttack.text = "?"
             tvDefense.text = "?"
+            imgCharacter.clearColorFilter()
+            cardView.alpha = 1.0f
         } else {
             if (character.imageResId != 0) {
                 imgCharacter.setImageResource(character.imageResId)
@@ -215,7 +269,20 @@ class TeamSetupActivity : AppCompatActivity() {
             }
             tvAttack.text = character.attack.toString()
             tvDefense.text = character.defense.toString()
+
+            if (isCharacterBanned(character)) {
+                imgCharacter.setColorFilter(
+                    android.graphics.Color.parseColor("#99000000"),
+                    android.graphics.PorterDuff.Mode.SRC_ATOP
+                )
+
+                cardView.alpha = 0.8f
+            } else {
+                imgCharacter.clearColorFilter()
+                cardView.alpha = 1.0f
+            }
         }
+
 
         cardView.setOnClickListener {
             onCardClicked(index, zone)
@@ -224,14 +291,20 @@ class TeamSetupActivity : AppCompatActivity() {
         resetCardSelection(cardView)
     }
 
+    private fun isCharacterBanned(character: Character): Boolean {
+        return gameState?.nextRoundBannedCharacters?.contains(character.id) == true
+    }
+
     private fun setupListeners() {
         btnConfirm.setOnClickListener {
-            if (gameState != null && gameState!!.currentRound > 1 && mustSwapCount < REQUIRED_SWAPS) {
-                showFeedbackMessage(
-                    "Você DEVE fazer $REQUIRED_SWAPS trocas! (${mustSwapCount}/$REQUIRED_SWAPS)")
-                return@setOnClickListener
-            }
+            if (gameState != null && gameState!!.currentRound > 1) {
+                val currentTeamSnapshot = mainCards.map { it.id }
 
+                if (currentTeamSnapshot == initialTeamSnapshot) {
+                    showFeedbackMessage(getString(R.string.swap_required))
+                    return@setOnClickListener
+                }
+            }
             val rawTeamName = etTeamName.text.toString().trim()
             val finalTeamName = rawTeamName.ifEmpty { currentPlayer.name }
 
@@ -240,7 +313,9 @@ class TeamSetupActivity : AppCompatActivity() {
             if (gameState != null) {
                 val updatedState = gameState!!.copy(
                     playerTeam = mainCards.reversed(),
-                    playerReserve = reserveCards
+                    playerReserve = reserveCards,
+                    opponentTeam = opponentPlayer.hand,
+                    opponentReserve = opponentReserve
                 )
                 intent.putExtra("GAME_STATE", updatedState)
                 intent.putExtra("PLAYER_NAME", finalTeamName)
@@ -252,8 +327,16 @@ class TeamSetupActivity : AppCompatActivity() {
                 intent.putExtra("CURRENT_PLAYER", updatedPlayer)
                 intent.putExtra("OPPONENT_PLAYER", opponentPlayer)
                 intent.putParcelableArrayListExtra("PLAYER_RESERVE", ArrayList(reserveCards))
+                intent.putParcelableArrayListExtra("OPPONENT_RESERVE", ArrayList(opponentReserve))
+                intent.putExtra("MAX_ROUNDS", maxRounds)
             }
 
+            startActivity(intent)
+            finish()
+        }
+        btnExit.setOnClickListener {
+            val intent = Intent(this, MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
             startActivity(intent)
             finish()
         }
@@ -271,7 +354,7 @@ class TeamSetupActivity : AppCompatActivity() {
         if (zone != CardZone.SHOP) {
             showPowerDescription(character)
         } else {
-            tvCardInfo.text = "Carta Misteriosa da Loja.\nTroque com uma reserva para revelar.\nA Loja permite comprar uma carta por derrota."
+            tvCardInfo.text = getString(R.string.shop_card_info)
         }
 
         if (index == lastClickedIndex && zone == lastClickedZone && (currentTime - lastClickTime) < DOUBLE_CLICK_DELAY) {
@@ -299,7 +382,7 @@ class TeamSetupActivity : AppCompatActivity() {
             val cardName = if(zone == CardZone.SHOP) "Loja" else
                 (if (zone == CardZone.RESERVE) reserveCards[index].name else mainCards[index].name)
 
-            tvInstructions.text = "$cardName. Double click no destino."
+            tvInstructions.text = getString(R.string.double_click_destination, cardName)
 
         } else {
 
@@ -313,12 +396,47 @@ class TeamSetupActivity : AppCompatActivity() {
                 handleShopTransaction(index, zone)
             } else if (selectedZone == CardZone.SHOP || zone == CardZone.SHOP) {
                 resetAllSelections()
-                showFeedbackMessage("A Loja só troca com a Reserva!")
+                showFeedbackMessage(getString(R.string.shop_only_with_reserve))
             } else if (selectedZone == CardZone.MAIN && zone == CardZone.MAIN) {
                 reorderMainCards(selectedIndex!!, index)
+            } else if (selectedZone == CardZone.RESERVE && zone == CardZone.RESERVE) {
+                swapReserveSlots(selectedIndex!!, index)
             } else {
-                swapTeamCards(index, zone)
+                val mainIndex = if (selectedZone == CardZone.MAIN) selectedIndex!! else index
+                val reserveIndex = if (selectedZone == CardZone.RESERVE) selectedIndex!! else index
+
+                swapMainAndReserve(mainIndex, reserveIndex)
             }
+        }
+    }
+
+    private fun applyBans(bannedIds: List<Int>) {
+        if (bannedIds.isEmpty()) return
+
+        val bannedNames = mutableListOf<String>()
+
+        for (i in mainCards.indices.reversed()) {
+            val character = mainCards[i]
+
+            if (character.id in bannedIds) {
+                bannedNames.add(character.name)
+
+                if (reserveCards.isNotEmpty()) {
+                    val cardFromReserve = reserveCards[0]
+                    reserveCards[0] = character
+                    mainCards[i] = cardFromReserve
+                } else {
+                    reserveCards.add(character)
+                    mainCards.removeAt(i)
+                }
+            }
+        }
+
+        if (bannedNames.isNotEmpty()) {
+            val msg = getString(
+                R.string.banned_moved_to_reserve,
+                bannedNames.joinToString(" e "))
+            showFeedbackMessage(msg)
         }
     }
 
@@ -339,15 +457,65 @@ class TeamSetupActivity : AppCompatActivity() {
         tvInstructions.text = defaultText
     }
 
+    private fun swapReserveSlots(index1: Int, index2: Int) {
+        val temp = reserveCards[index1]
+        reserveCards[index1] = reserveCards[index2]
+        reserveCards[index2] = temp
+
+        setupCardView(reserveCardViews[index1], reserveCards[index1], index1, CardZone.RESERVE)
+        setupCardView(reserveCardViews[index2], reserveCards[index2], index2, CardZone.RESERVE)
+
+        resetAllSelections()
+        tvInstructions.text = defaultText
+    }
+
     private fun showPowerDescription(character: Character) {
-        val powerText = character.power.ifEmpty { "Nenhum" }
-        val infoText = buildString {
-            appendLine(character.id.toRoman())
-            appendLine("${character.name} é ${character.types.joinToString(" e ") { it.desc }}")
-            appendLine("Poder: $powerText")
-            appendLine("Quando ativa: ${character.trigger.desc}")
+        val grayColor = Color.parseColor("#aaaaaa") // Cor para os argumentos 1 e 2
+        val powerText = character.power.ifEmpty { getString(R.string.no_power) }
+
+        val builder = SpannableStringBuilder()
+
+        // 1. ID em Romano
+        builder.append(character.id.toRoman()).append("\n")
+
+        // 2. Tipo do Personagem (Nome e Tipos)
+        // Usamos context.getSpannableString personalizado para formatar com cores
+        val typeText = formatSpannable(
+            getString(
+                R.string.character_type_format,
+                character.name,
+                character.types.joinToString(" e ") { getString(it.desc) }
+            ),
+            grayColor,
+            // Removido character.name daqui
+            character.types.joinToString(" e ") { getString(it.desc) }
+        )
+        builder.append(typeText).append("\n")
+
+        // 3. Poder
+        builder.append(formatSpannable(getString(R.string.power_label, powerText), grayColor, powerText)).append("\n")
+
+        // 4. Trigger
+        val triggerDesc = getString(character.trigger.desc)
+        builder.append(formatSpannable(getString(R.string.trigger_label, triggerDesc), grayColor, triggerDesc))
+
+        tvCardInfo.text = builder
+    }
+
+    private fun formatSpannable(fullText: String, color: Int, vararg targets: String): SpannableString {
+        val spannable = SpannableString(fullText)
+        for (target in targets) {
+            val start = fullText.indexOf(target)
+            if (start != -1) {
+                spannable.setSpan(
+                    ForegroundColorSpan(color),
+                    start,
+                    start + target.length,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
         }
-        tvCardInfo.text = infoText
+        return spannable
     }
 
     private fun highlightCard(cardView: View) {

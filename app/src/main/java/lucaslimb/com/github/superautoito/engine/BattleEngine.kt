@@ -1,29 +1,37 @@
 package lucaslimb.com.github.superautoito.engine
 
+import android.content.Context
+import lucaslimb.com.github.superautoito.R
 import lucaslimb.com.github.superautoito.model.*
 
 class BattleEngine(
+    private val context: Context,
     private var playerTeam: MutableList<Character>,
     private var enemyTeam: MutableList<Character>
 ) {
-    private val abilityExecutor = AbilityExecutor()
     private val battleLog = mutableListOf<String>()
     private val graveyard = mutableListOf<Character>()
     private val lastKiller = mutableMapOf<Character, Character>()
+    private val nextRoundBannedIds = mutableListOf<Int>()
 
     fun getPlayerTeam() = playerTeam.toList()
     fun getEnemyTeam() = enemyTeam.toList()
     fun getBattleLog() = battleLog.toList()
+    fun getBannedIds() = nextRoundBannedIds.toList()
+    private val abilityExecutor = AbilityExecutor (context) { bannedId ->
+        nextRoundBannedIds.add(bannedId)
+    }
 
     suspend fun executePreBattlePhase(onLog: (String) -> Unit, onUpdate: suspend () -> Unit) {
-        log("--- FASE PRÉ-BATALHA ---", onLog)
+        log(context.getString(R.string.battle_pre_phase), onLog)
+        var i = 0
+        while (i < playerTeam.size) {
+            val character = playerTeam[i]
 
-        // Player team
-        playerTeam.forEachIndexed { index, character ->
-            if (character.trigger == TriggerType.BEFORE_BATTLE) {
+            if (character.trigger == TriggerType.BEFORE_BATTLE && character.defense > 0) {
                 val context = AbilityContext(
                     caster = character,
-                    casterIndex = index,
+                    casterIndex = i,
                     allies = playerTeam,
                     enemies = enemyTeam,
                     graveyard = graveyard,
@@ -31,16 +39,24 @@ class BattleEngine(
                 )
 
                 abilityExecutor.execute(context, onLog)
+
+                handleDeaths(onLog, onUpdate)
                 onUpdate()
+            }
+
+            if (i < playerTeam.size && playerTeam[i] == character) {
+                i++
             }
         }
 
-        // Enemy team
-        enemyTeam.forEachIndexed { index, character ->
-            if (character.trigger == TriggerType.BEFORE_BATTLE) {
+        i = 0
+        while (i < enemyTeam.size) {
+            val character = enemyTeam[i]
+
+            if (character.trigger == TriggerType.BEFORE_BATTLE && character.defense > 0) {
                 val context = AbilityContext(
                     caster = character,
-                    casterIndex = index,
+                    casterIndex = i,
                     allies = enemyTeam,
                     enemies = playerTeam,
                     graveyard = graveyard,
@@ -48,17 +64,19 @@ class BattleEngine(
                 )
 
                 abilityExecutor.execute(context, onLog)
+
+                handleDeaths(onLog, onUpdate)
                 onUpdate()
+            }
+
+            if (i < enemyTeam.size && enemyTeam[i] == character) {
+                i++
             }
         }
 
-        log("Fase pré-batalha concluída!", onLog)
+        log(context.getString(R.string.battle_pre_phase_end), onLog)
     }
 
-    /**
-     * Executa um turno de combate (primeiro personagem de cada time)
-     * Retorna true se a batalha deve continuar
-     */
     suspend fun executeCombatTurn(
         onLog: (String) -> Unit,
         onUpdate: suspend () -> Unit
@@ -68,13 +86,14 @@ class BattleEngine(
         val playerChar = playerTeam[0]
         val enemyChar = enemyTeam[0]
 
-        log("${playerChar.name} (${playerChar.attack}/${playerChar.defense}) VS ${enemyChar.name} (${enemyChar.attack}/${enemyChar.defense})", onLog)
-
         val playerDefBefore = playerChar.defense
         val enemyDefBefore = enemyChar.defense
 
         playerChar.defense -= enemyChar.attack
         enemyChar.defense -= playerChar.attack
+
+        if (playerChar.defense < 0) playerChar.defense = 0
+        if (enemyChar.defense < 0) enemyChar.defense = 0
 
         onUpdate()
 
@@ -97,6 +116,7 @@ class BattleEngine(
                 )
 
                 abilityExecutor.execute(context, onLog)
+                handleDeaths(onLog, onUpdate)
                 onUpdate()
             }
         }
@@ -117,6 +137,7 @@ class BattleEngine(
                 )
 
                 abilityExecutor.execute(context, onLog)
+                handleDeaths(onLog, onUpdate)
                 onUpdate()
             }
         }
@@ -127,57 +148,71 @@ class BattleEngine(
     }
 
     private suspend fun handleDeaths(onLog: (String) -> Unit, onUpdate: suspend () -> Unit) {
-        // Player team
-        if (playerTeam.isNotEmpty() && playerTeam[0].defense <= 0) {
-            val dead = playerTeam[0]
-            log("${dead.name} foi derrotado!", onLog)
+        var deathProcessed = true
 
-            if (dead.trigger == TriggerType.ON_DEATH) {
-                val killer = lastKiller[dead]
+        while (deathProcessed) {
+            deathProcessed = false
 
-                val context = AbilityContext(
-                    caster = dead,
-                    casterIndex = 0,
-                    allies = playerTeam,
-                    enemies = enemyTeam,
-                    graveyard = graveyard,
-                    isPlayerTeam = true,
-                    killer = killer
-                )
+            var i = 0
+            while (i < playerTeam.size) {
+                val character = playerTeam[i]
 
-                abilityExecutor.execute(context, onLog)
-                onUpdate()
+                if (character.defense <= 0) {
+                    log(context.getString(R.string.battle_defeated_format, character.name), onLog)
+                    playerTeam.removeAt(i)
+
+                    graveyard.add(character)
+
+                    if (character.trigger == TriggerType.ON_DEATH) {
+                        val killer = lastKiller[character]
+                        val context = AbilityContext(
+                            caster = character,
+                            casterIndex = 0,
+                            allies = playerTeam,
+                            enemies = enemyTeam,
+                            graveyard = graveyard,
+                            isPlayerTeam = true,
+                            killer = killer
+                        )
+                        abilityExecutor.execute(context, onLog)
+                    }
+
+                    deathProcessed = true
+                    onUpdate()
+                } else {
+                    i++
+                }
             }
 
-            graveyard.add(dead)
-            playerTeam.removeAt(0)
-            onUpdate()
-        }
+            var j = 0
+            while (j < enemyTeam.size) {
+                val character = enemyTeam[j]
 
-        if (enemyTeam.isNotEmpty() && enemyTeam[0].defense <= 0) {
-            val dead = enemyTeam[0]
-            log("${dead.name} foi derrotado!", onLog)
+                if (character.defense <= 0) {
+                    log(context.getString(R.string.battle_defeated_format, character.name), onLog)
+                    enemyTeam.removeAt(j)
+                    graveyard.add(character)
 
-            if (dead.trigger == TriggerType.ON_DEATH) {
-                val killer = lastKiller[dead]
+                    if (character.trigger == TriggerType.ON_DEATH) {
+                        val killer = lastKiller[character]
+                        val context = AbilityContext(
+                            caster = character,
+                            casterIndex = 0,
+                            allies = enemyTeam,
+                            enemies = playerTeam,
+                            graveyard = graveyard,
+                            isPlayerTeam = false,
+                            killer = killer
+                        )
+                        abilityExecutor.execute(context, onLog)
+                    }
 
-                val context = AbilityContext(
-                    caster = dead,
-                    casterIndex = 0,
-                    allies = enemyTeam,
-                    enemies = playerTeam,
-                    graveyard = graveyard,
-                    isPlayerTeam = false,
-                    killer = killer
-                )
-
-                abilityExecutor.execute(context, onLog)
-                onUpdate()
+                    deathProcessed = true
+                    onUpdate()
+                } else {
+                    j++
+                }
             }
-
-            graveyard.add(dead)
-            enemyTeam.removeAt(0)
-            onUpdate()
         }
     }
 
@@ -193,4 +228,6 @@ class BattleEngine(
         battleLog.add(message)
         onLog(message)
     }
+
+
 }

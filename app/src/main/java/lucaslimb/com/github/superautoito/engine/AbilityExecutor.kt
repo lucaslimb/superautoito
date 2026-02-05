@@ -1,51 +1,59 @@
 package lucaslimb.com.github.superautoito.engine
 
+import android.content.Context
+import lucaslimb.com.github.superautoito.R
 import lucaslimb.com.github.superautoito.model.*
 
-class AbilityExecutor {
+class AbilityExecutor (
+    private val context: Context,
+    private val onBanCharacter: (Int) -> Unit) {
 
-    fun execute(context: AbilityContext, onLog: (String) -> Unit) {
-        val targets = resolveTargets(context)
+    private val baseCharactersCache by lazy {
+        Character.getDefaultCharacters(context).associateBy { it.id }
+    }
 
-        when (context.caster.powerType) {
-            PowerType.BUFF_ATA -> applyStatChange(context, targets, StatType.ATTACK, true, onLog)
-            PowerType.BUFF_DEF -> applyStatChange(context, targets, StatType.DEFENSE, true, onLog)
-            PowerType.DEBUFF_ATA -> applyStatChange(context, targets, StatType.ATTACK, false, onLog)
-            PowerType.DEBUFF_DEF -> applyStatChange(context, targets, StatType.DEFENSE, false, onLog)
-            PowerType.INVOKE -> handleInvoke(context, onLog)
-            PowerType.DECK_CHANGE -> handleDeckChange(context, targets, onLog)
-            PowerType.GENERAL -> handleGeneral(context, targets, onLog)
+    fun execute(abContext: AbilityContext, onLog: (String) -> Unit) {
+        val targets = resolveTargets(abContext)
+
+        when (abContext.caster.powerType) {
+            PowerType.BUFF_ATA -> applyStatChange(abContext, targets, StatType.ATTACK, true, onLog)
+            PowerType.BUFF_DEF -> applyStatChange(abContext, targets, StatType.DEFENSE, true, onLog)
+            PowerType.DEBUFF_ATA -> applyStatChange(abContext, targets, StatType.ATTACK, false, onLog)
+            PowerType.DEBUFF_DEF -> applyStatChange(abContext, targets, StatType.DEFENSE, false, onLog)
+            PowerType.INVOKE -> handleInvoke(abContext, onLog)
+            PowerType.DECK_CHANGE -> handleDeckChange(abContext, targets, onLog)
+            PowerType.GENERAL -> handleGeneral(abContext, targets, onLog)
         }
     }
 
-    private fun resolveTargets(context: AbilityContext): List<Character> {
-        val c = context.caster
+    private fun resolveTargets(abContext: AbilityContext): List<Character> {
+        val c = abContext.caster
 
         when {
             c.trigger == TriggerType.ON_KILL && c.powerTarget == PowerTarget.ENEMY -> {
-                val nextEnemy = context.enemies.firstOrNull { it.defense > 0 }
+                val nextEnemy = abContext.enemies.firstOrNull { it.defense > 0 }
                 return if (nextEnemy != null) listOf(nextEnemy) else emptyList()
             }
 
-            c.powerTargetType == PowerTargetType.LOOSER && context.victim != null -> {
-                return listOf(context.victim)
+            c.powerTargetType == PowerTargetType.LOOSER && abContext.victim != null -> {
+                return listOf(abContext.victim)
             }
 
-            c.powerTargetType == PowerTargetType.WINNER && context.killer != null -> {
-                return listOf(context.killer)
+            c.powerTargetType == PowerTargetType.WINNER && abContext.killer != null -> {
+                return listOf(abContext.killer)
             }
 
             c.powerTarget == PowerTarget.SELF && c.powerTargetType != PowerTargetType.NONE -> {
-                val hasMatchingEnemy = context.enemies.any { it.hasType(c.powerTargetType) }
+                val hasMatchingEnemy = abContext.enemies.any { it.hasType(c.powerTargetType) }
                 return if (hasMatchingEnemy) listOf(c) else emptyList()
             }
         }
 
         val scope = when (c.powerTarget) {
             PowerTarget.SELF -> listOf(c)
-            PowerTarget.ALLY -> context.allies.filter { it != c }
-            PowerTarget.ENEMY -> context.enemies
-            PowerTarget.ALL -> (context.allies.filter { it != c } + context.enemies)
+            PowerTarget.ALLY -> abContext.allies.filter { it != c }
+            PowerTarget.ENEMY -> abContext.enemies
+            PowerTarget.ALL -> (abContext.allies.filter { it != c } + abContext.enemies)
             PowerTarget.GENERAL, PowerTarget.NONE -> emptyList()
         }
 
@@ -63,7 +71,7 @@ class AbilityExecutor {
     }
 
     private fun applyStatChange(
-        context: AbilityContext,
+        abContext: AbilityContext,
         targets: List<Character>,
         statType: StatType,
         isBuff: Boolean,
@@ -71,9 +79,15 @@ class AbilityExecutor {
     ) {
         if (targets.isEmpty()) return
 
-        val amount = context.caster.statAmount
-        val actionWord = if (isBuff) "aumentou" else "reduziu"
-        val statName = if (statType == StatType.ATTACK) "ATAQUE" else "DEFESA"
+        val amount = abContext.caster.statAmount
+        val actionWord = if (isBuff)
+            context.getString(R.string.stat_increased)
+        else
+            context.getString(R.string.stat_decreased)
+        val statName = if (statType == StatType.ATTACK)
+            context.getString(R.string.stat_attack)
+        else
+            context.getString(R.string.stat_defense)
 
         targets.forEach { target ->
             val oldValue = if (statType == StatType.ATTACK) target.attack else target.defense
@@ -86,86 +100,118 @@ class AbilityExecutor {
                 target.defense = newValue
             }
 
-            onLog("${context.caster.name} $actionWord $delta de $statName de ${target.name}")
+            onLog(
+                context.getString(
+                    R.string.ability_stat_change_format,
+                    abContext.caster.name,
+                    actionWord,
+                    delta,
+                    statName,
+                    target.name
+                )
+            )
         }
     }
 
-    private fun handleInvoke(context: AbilityContext, onLog: (String) -> Unit) {
-        when (context.caster.id) {
+    private fun handleInvoke(abContext: AbilityContext, onLog: (String) -> Unit) {
+
+        val spawnIndex = (abContext.casterIndex + 1).coerceAtMost(abContext.allies.size)
+
+        when (abContext.caster.id) {
             1 -> { // Tomie - Volta no fim do deck (apenas 1x)
-                context.allies.add(context.caster.copy(
+                abContext.allies.add(abContext.caster.copy(
+                    attack = 1,
+                    defense = 1,
                     power = "",
                     powerType = PowerType.GENERAL
                 ))
-                onLog("${context.caster.name} voltou ao fim do deck!")
+                onLog(context.getString(R.string.invoke_reborn, abContext.caster.name))
             }
 
             2 -> { // Souichi - Invoca ARANHA 1/1
-                val aranha = createToken("Aranha", 1, 1, context.caster.imageResId)
-                context.allies.add(aranha)
-                onLog("${context.caster.name} invocou uma Aranha!")
+                val aranha = createToken("Aranha", 1, 1, abContext.caster.imageResId)
+                abContext.allies.add(spawnIndex, aranha)
+                onLog(context.getString(R.string.invoke_spider, abContext.caster.name))
             }
 
             29 -> { // Kazuya - Invoca MORCEGO 1/1
-                val morcego = createToken("Morcego", 1, 1, context.caster.imageResId)
-                context.allies.add(morcego)
-                onLog("${context.caster.name} invocou um Morcego!")
+                val morcego = createToken("Morcego", 1, 1, abContext.caster.imageResId)
+                abContext.allies.add(spawnIndex,morcego)
+                onLog(context.getString(R.string.invoke_bat, abContext.caster.name))
             }
 
             22 -> { // Terumi - Invoca CABEÇA 1/1
-                val cabeca = createToken("Cabeça", 1, 1, context.caster.imageResId)
-                context.allies.add(cabeca)
-                onLog("${context.caster.name} invocou uma Cabeça!")
+                val cabeca = createToken("Cabeça", 1, 1, abContext.caster.imageResId)
+                abContext.allies.add(spawnIndex,cabeca)
+                onLog(context.getString(R.string.invoke_head, abContext.caster.name))
             }
 
             6 -> { // Chiemi - Invoca o INIMIGO que a MATOU
-                context.killer?.let { killer ->
-                    val copy = killer.copy()
-                    context.allies.add(copy)
-                    onLog("${context.caster.name} invocou uma cópia de ${killer.name}!")
+                abContext.killer?.let { killer ->
+                    val originalKiller = getOriginalChar(killer.id) ?: killer.copy(defense = 1)
+
+                    // Cria uma cópia limpa com vida cheia
+                    val copy = originalKiller.copy()
+                    abContext.allies.add(spawnIndex, copy)
+                    onLog(context.getString(R.string.invoke_copy, abContext.caster.name, killer.name))
                 }
             }
 
             9 -> { // Soldado Furukawa - Invoca dublê aleatório do DECK
-                val deckCards = context.allies.drop(1)
+                val deckCards = abContext.allies.drop(1)
                 if (deckCards.isNotEmpty()) {
                     val randomCard = deckCards.random()
-                    val copy = randomCard.copy()
-                    context.allies.add(copy)
-                    onLog("${context.caster.name} invocou uma cópia de ${randomCard.name}!")
+                    val original = getOriginalChar(randomCard.id) ?: randomCard
+                    val copy = original.copy()
+
+                    abContext.allies.add(spawnIndex, copy)
+                    onLog(context.getString(R.string.invoke_copy, abContext.caster.name, randomCard.name))
                 }
             }
 
             24 -> { // Kumi - Invoca a ÚLTIMA carta que MORREU
-                val lastDead = context.graveyard.lastOrNull()
-                lastDead?.let {
-                    val copy = it.copy()
-                    context.allies.add(copy)
-                    onLog("${context.caster.name} invocou ${it.name} do cemitério!")
+                val lastDead = abContext.graveyard.lastOrNull { it != abContext.caster }
+
+                lastDead?.let { deadChar ->
+                    val original = getOriginalChar(deadChar.id) ?: deadChar.copy(defense = 1)
+
+                    val copy = original.copy()
+                    abContext.allies.add(spawnIndex, copy)
+                    onLog(context.getString(R.string.invoke_graveyard, abContext.caster.name, original.name))
                 }
             }
 
             7 -> { // Reanimador - Reanima carta morta com 50% stats
-                val deadAllies = context.graveyard.filter {
-                    // Verifica se é do mesmo time (simplificação: assume que graveyard tem info)
-                    true // Na prática, precisaria de flag isPlayerTeam no Character
+                val deadAllies = abContext.graveyard.filter {
+                    it != abContext.caster
                 }
 
                 if (deadAllies.isNotEmpty()) {
-                    val toRevive = deadAllies.random()
-                    val revived = toRevive.copy(
-                        attack = (toRevive.attack * 0.5).toInt(),
-                        defense = (toRevive.defense * 0.5).toInt()
+                    val toReviveDead = deadAllies.random()
+
+                    val originalInfo = getOriginalChar(toReviveDead.id) ?: toReviveDead.copy(defense = 2, attack = 2)
+
+                    val newAttack = maxOf(1, (originalInfo.attack * 0.5).toInt())
+                    val newDefense = maxOf(1, (originalInfo.defense * 0.5).toInt())
+
+                    val revived = originalInfo.copy(
+                        attack = newAttack,
+                        defense = newDefense
                     )
-                    context.allies.add(revived)
-                    onLog("${context.caster.name} reanimou ${toRevive.name} com metade dos stats!")
+                    abContext.allies.add(spawnIndex, revived)
+                    onLog(context.getString(R.string.invoke_revive_half, abContext.caster.name, originalInfo.name))
                 }
             }
         }
     }
 
+    private fun getOriginalChar(id: Int): Character? {
+        if (id == -1) return null
+        return baseCharactersCache[id]
+    }
+
     private fun handleDeckChange(
-        context: AbilityContext,
+        abContext: AbilityContext,
         targets: List<Character>,
         onLog: (String) -> Unit
     ) {
@@ -173,69 +219,140 @@ class AbilityExecutor {
 
         val target = targets.first()
 
-        when (context.caster.id) {
+        when (abContext.caster.id) {
             11 -> { // Misuzu - Inverte ATK/DEF
                 val temp = target.attack
                 target.attack = target.defense
                 target.defense = temp
-                onLog("${context.caster.name} inverteu stats de ${target.name} (${target.attack}/${target.defense})")
+                onLog(
+                    context.getString(
+                        R.string.deck_swap_stats,
+                        abContext.caster.name,
+                        target.name,
+                        target.attack,
+                        target.defense
+                    )
+                )
             }
 
             26, 13 -> { // Yuko/Tomoo - Remove do próximo round
-                // Marca para remoção (implementação: remove do deck)
-                val index = context.enemies.indexOf(target)
+
+                if (abContext.isPlayerTeam) {
+
+                } else {
+                    onBanCharacter(target.id)
+                }
+
+                val index = abContext.enemies.indexOf(target)
                 if (index != -1) {
-                    context.enemies.removeAt(index)
-                    onLog("${context.caster.name} baniu ${target.name} do próximo round!")
+                    onLog(
+                        context.getString(
+                            R.string.deck_ban,
+                            abContext.caster.name,
+                            target.name
+                        )
+                    )
                 }
             }
 
             30 -> { // Goro - Troca posição aleatória
-                val currentIndex = context.enemies.indexOf(target)
-                if (currentIndex != -1 && context.enemies.size > 1) {
-                    val newIndex = (0 until context.enemies.size).filter { it != currentIndex }.random()
-                    context.enemies.removeAt(currentIndex)
-                    context.enemies.add(newIndex, target)
-                    onLog("${context.caster.name} moveu ${target.name} para posição ${newIndex + 1}")
+                val currentIndex = abContext.enemies.indexOf(target)
+                if (currentIndex != -1 && abContext.enemies.size > 1) {
+                    val newIndex = (0 until abContext.enemies.size).filter { it != currentIndex }.random()
+                    abContext.enemies.removeAt(currentIndex)
+                    abContext.enemies.add(newIndex, target)
+                    onLog(
+                        context.getString(
+                            R.string.deck_move,
+                            abContext.caster.name,
+                            target.name,
+                            newIndex + 1
+                        )
+                    )
                 }
             }
         }
     }
 
     private fun handleGeneral(
-        context: AbilityContext,
+        abContext: AbilityContext,
         targets: List<Character>,
         onLog: (String) -> Unit
     ) {
-        when (context.caster.id) {
+        when (abContext.caster.id) {
             32 -> { // Misaki - Rouba 50% da DEFESA
-                context.victim?.let { victim ->
-                    val stealAmount = (context.victimPreviousDefense * 0.5).toInt()
-                    context.caster.defense += stealAmount
-                    onLog("${context.caster.name} roubou $stealAmount de defesa de ${victim.name}!")
+                abContext.victim?.let { victim ->
+                    val stealAmount = (abContext.victimPreviousDefense * 0.5).toInt()
+                    abContext.caster.defense += stealAmount
+                    onLog(
+                        context.getString(
+                            R.string.general_steal_def,
+                            abContext.caster.name,
+                            stealAmount,
+                            victim.name
+                        )
+                    )
                 }
             }
 
-            20 -> { // Ryo Tsukano - Rouba PODER (complexo, simplificado)
-                context.victim?.let { victim ->
-                    // Como Character é imutável, não dá pra trocar poder em runtime
-                    // Solução: logar que roubou (implementação completa precisaria de var)
-                    onLog("${context.caster.name} copiou o poder de ${victim.name}!")
-                    // TODO: Implementar sistema de poderes mutáveis se necessário
+            20 -> { // Ryo Tsukano - Rouba PODER e EXECUTA AGORA
+                val victim = abContext.victim
+
+                // 1. Validação básica: precisa de vítima e ela não pode ser outro Ryo (evita loop)
+                if (victim != null && victim.id != 20) {
+
+                    // 2. Busca os dados originais da vítima (para pegar o poder full, não o estado morto)
+                    val originalVictim = getOriginalChar(victim.id) ?: victim
+
+                    onLog(context.getString(R.string.general_copy_power, abContext.caster.name, originalVictim.name))
+
+                    // 3. Cria o "Ryo Mímico"
+                    // Mantemos o NOME e IMAGEM do Ryo, mas trocamos ID e DADOS DO PODER pelos da vítima.
+                    // Isso engana o 'when' do execute() e handleInvoke() para rodar a lógica da vítima.
+                    val mimicRyo = abContext.caster.copy(
+                        id = originalVictim.id, // O TRUQUE: Mudamos o ID temporariamente para cair no case certo
+                        powerType = originalVictim.powerType,
+                        powerTarget = originalVictim.powerTarget,
+                        powerTargetType = originalVictim.powerTargetType,
+                        statAmount = originalVictim.statAmount,
+                        trigger = originalVictim.trigger, // Copia gatilho (irrelevante aqui, mas bom pra consistência)
+                        power = originalVictim.power // Texto do poder
+                    )
+
+                    // 4. Cria um novo contexto com o Ryo Mímico como conjurador
+                    val mimicContext = abContext.copy(
+                        caster = mimicRyo,
+                        // Removemos vítima/killer do contexto clonado para evitar efeitos colaterais estranhos
+                        // a menos que o poder da vítima precise deles.
+                        // Geralmente powers ativos (Buff/Invoke) não usam victim/killer no momento da execução.
+                        victim = null,
+                        killer = null
+                    )
+
+                    // 5. RECURSIVIDADE: Executa a habilidade roubada imediatamente
+                    // O 'execute' vai ler o powerType da vítima e despachar para a função correta
+                    this.execute(mimicContext, onLog)
                 }
             }
 
             23 -> { // Maya - +50% DEF ao aliado ao lado
-                val myIndex = context.allies.indexOf(context.caster)
+                val myIndex = abContext.allies.indexOf(abContext.caster)
                 val neighbors = mutableListOf<Character>()
 
-                if (myIndex > 0) neighbors.add(context.allies[myIndex - 1])
-                if (myIndex < context.allies.size - 1) neighbors.add(context.allies[myIndex + 1])
+                if (myIndex > 0) neighbors.add(abContext.allies[myIndex - 1])
+                if (myIndex < abContext.allies.size - 1) neighbors.add(abContext.allies[myIndex + 1])
 
                 neighbors.forEach { ally ->
                     val bonus = (ally.defense * 0.5).toInt()
                     ally.defense += bonus
-                    onLog("${context.caster.name} deu +$bonus DEF para ${ally.name}")
+                    onLog(
+                        context.getString(
+                            R.string.general_buff_neighbor,
+                            abContext.caster.name,
+                            bonus,
+                            ally.name
+                        )
+                    )
                 }
             }
         }
@@ -269,8 +386,8 @@ class AbilityExecutor {
     private fun calculateNewStat(current: Int, amount: StatAmount, isBuff: Boolean): Int {
         val delta = when {
             amount.value == 0.0 -> 0
-            amount.value < 1.0 -> (current * amount.value).toInt() // Porcentagem
-            else -> amount.value.toInt() // Valor fixo
+            amount.value < 1.0 -> (current * amount.value).toInt()
+            else -> amount.value.toInt()
         }
 
         val newValue = if (isBuff) current + delta else current - delta

@@ -42,6 +42,10 @@
             android:exported="false"
             android:screenOrientation="landscape" />
 
+        <activity
+            android:name=".screens.GameTipsActivity"
+            />
+
     </application>
 
 </manifest>

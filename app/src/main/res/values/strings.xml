@@ -1,14 +1,208 @@
 <resources>
     <string name="app_name">Super Auto Ito</string>
-    <string name="enter_name">Digite seu nome</string>
-    <string name="player_name_hint">Nome do jogador</string>
-    <string name="confirm">Confirmar</string>
-    <string name="create_room">Criar Sala (Host)</string>
-    <string name="join_room">Entrar em Sala</string>
-    <string name="start">Iniciar</string>
-    <string name="back">Voltar</string>
-    <string name="waiting">Aguardando...</string>
-    <string name="network_info">📡 Ambos os jogadores devem estar na mesma rede WiFi</string>
-    <string name="game_title">JOGO</string>
-    <string name="loading_game">Carregando jogo...</string>
+    <string name="app_subtitle">Junji Ito Cards Autobattle</string>
+    <string name="game_mode">Modo de Jogo:</string>
+    <string name="mode_create">Criar</string>
+    <string name="mode_join">Entrar</string>
+    <string name="mode_cpu">CPU</string>
+    <string name="room_name">Nome da Sala:</string>
+    <string name="room_name_hint">Ex: Arena Suprema</string>
+    <string name="rounds_number">Número de Rounds:</string>
+    <string name="rounds_example_5">Ex: 5</string>
+    <string name="rounds_example_10">Ex: 10</string>
+    <string name="found_rooms">Salas Encontradas:</string>
+    <string name="searching_rooms">Buscando salas…</string>
+    <string name="waiting">Aguardando…</string>
+    <string name="select_mode">SELECIONE UM MODO</string>
+    <string name="how_to_play">How to play</string>
+    <string name="exit">SAIR</string>
+    <string name="version_info">1.0 - Local network version</string>
+    <string name="github_link">github.com/lucaslimb</string>
+    <string name="email_contact">lucasdelimabzr@gmail.com</string>
+
+    <string name="create_room">CRIAR SALA</string>
+    <string name="connect">CONECTAR</string>
+    <string name="play_solo">JOGAR SOLO</string>
+    <string name="toast_enter_room_name">Digite um nome para a sala</string>
+    <string name="creating_room">"Criando sala '%s'…"</string>
+    <string name="connecting_to">Conectando a %s…</string>
+    <string name="starting_solo">Iniciando modo Solo (%d rounds)…</string>
+    <string name="room_created_waiting">Sala criada! Aguardando oponente…</string>
+    <string name="waiting_for_player">Esperando alguém conectar…</string>
+    <string name="connected_sync">Conectado! Sincronizando…</string>
+    <string name="sync_error">Erro na sincronização dos dados</string>
+    <string name="error_prefix">Erro: %s</string>
+    <string name="player_you">Você</string>
+    <string name="player_cpu">CPU</string>
+    <string name="player_you_no_accent">Voce</string>
+    <string name="connect_room_format">CONECTAR: %s</string>
+    <string name="room_list_item">%1$s (%2$s Rounds)</string>
+
+    <string name="tips_title">Super Auto Ito</string>
+    <string name="section_game">O Jogo</string>
+    <string name="game_desc_1">Monte o time mais poderoso de kyara do universo de Junji Ito e deixe que eles lutem em batalhas automáticas.</string>
+    <string name="game_desc_2">Cada partida é um teste de estratégia: escolher quem entra no time, em que ordem lutarão e como combinar suas habilidades únicas.</string>
+    <string name="section_cards">As Cartas</string>
+    <string name="cards_desc_1">Cada carta representa um personagem de Junji Ito (Tomie, Souichi, entre outros) e possui dois atributos:</string>
+    <string name="cards_desc_2">• Ataque\n• Defesa\nO ataque sempre reduz a defesa do oponente.</string>
+    <string name="cards_desc_3">Cada personagem também possui características que afetam suas habilidades:</string>
+    <string name="cards_desc_4">Masculino, Feminino, Criança, Cadáver, Sobrenatural e Comum.</string>
+    <string name="section_skills">Habilidades</string>
+    <string name="skills_desc_1">Todo personagem possui uma habilidade única. Elas se dividem em cinco tipos:</string>
+    <string name="skills_desc_2">• Buff\n• Debuff\n• Mudança no deck\n• Invocação\n• Especiais</string>
+    <string name="skills_desc_3">Cada habilidade possui momento de ativação, alvo e critério, que é baseado na característica do alvo:</string>
+    <string name="skills_desc_4">Momentos: Ao matar, Ao morrer, Início da batalha.\nAlvos: Próprio personagem, Inimigo, Amigo, Todos, Aleatório, Quem matou, Quem morreu.</string>
+    <string name="section_deck">O Deck</string>
+    <string name="deck_desc_1">No início da partida, 8 personagens são sorteados:</string>
+    <string name="deck_desc_2">• 6 entram no time principal\n• 2 ficam na reserva</string>
+    <string name="deck_desc_3">Você pode reorganizar a ordem do time e trocar personagens entre principais e reservas livremente.</string>
+    <string name="deck_desc_4">A cada rodada, é obrigatório realizar ao menos um reserva ir para o time principal.</string>
+    <string name="deck_desc_5">Ao sofrer uma derrota, você pode comprar um personagem aleatório da loja e colocá-lo na reserva. Ele pode entrar no time principal em seguida.</string>
+    <string name="section_battle">A Batalha</string>
+    <string name="battle_desc_1">As batalhas acontecem em duas fases:</string>
+    <string name="battle_desc_2">1. Fase de Início: habilidades de início são ativadas.\n2. Fase de Enfrentamento: os personagens se atacam seguindo a ordem do deck.</string>
+    <string name="battle_desc_3">Vence quem ainda possuir cartas ao final do combate.</string>
+    <string name="btn_understood">CERTO, ENTENDI</string>
+
+    <string name="card_info_hint">Toque em uma carta para ver detalhes.</string>
+    <string name="btn_exit">SAIR</string>
+    <string name="team_name_default">MEU TIME</string>
+    <string name="team_name_hint">Nome do Time</string>
+    <string name="round_info">Round 1/5</string>
+    <string name="win_loss_info">V: 0 | D: 0</string>
+    <string name="swap_instructions">Selecione uma carta da reserva e outra do time principal para realizar a troca.</string>
+    <string name="btn_start">START</string>
+
+    <!-- Jogador / CPU -->
+    <string name="cpu_name">CPU</string>
+    <string name="default_player_name">Jogador</string>
+
+    <!-- Mensagens gerais -->
+    <string name="default_instruction">Monte seu time!</string>
+    <string name="defeat_shop_available">DERROTA! Você pode comprar 1 carta da loja!</string>
+    <string name="shop_only_after_defeat">Loja disponível apenas após DERROTA!</string>
+    <string name="shop_only_with_reserve">A Loja só troca com a Reserva!</string>
+
+    <!-- Trocas -->
+    <string name="swap_progress">Troca %1$d/%2$d completa!</string>
+    <string name="swap_complete">Troca obrigatórias concluída!</string>
+    <string name="swap_required">Você deve fazer uma troca!</string>
+
+    <!-- Round / placar -->
+    <string name="round_info_format">Round %1$d/%2$d</string>
+    <string name="win_loss_format">V: %1$d | D: %2$d</string>
+
+    <!-- Loja -->
+    <string name="shop_card_info">
+        Carta Misteriosa da Loja.\nTroque com uma reserva para revelar.\nA Loja permite comprar uma carta por derrota.
+    </string>
+
+    <!-- Seleção -->
+    <string name="double_click_destination">%1$s. Double click no destino.</string>
+
+    <!-- Ban -->
+    <string name="banned_character">%1$s está banido neste round!</string>
+    <string name="banned_moved_to_reserve">Banido! %1$s movido para reserva.</string>
+
+    <!-- Poder / carta -->
+    <string name="no_power">Nenhum</string>
+    <string name="power_label">Poder: %1$s</string>
+    <string name="trigger_label">Quando ativa: %1$s</string>
+    <string name="character_type_format">%1$s: %2$s</string>
+
+    <!-- Título -->
+    <string name="battle_title">BATTLE</string>
+
+    <!-- Nomes -->
+    <string name="player_label">JOGADOR</string>
+    <string name="opponent_label">OPONENTE</string>
+
+    <!-- Log de batalha -->
+    <string name="battle_start_log">A batalha vai começar…</string>
+
+    <!-- Botões -->
+    <string name="btn_play_again">JOGAR NOVAMENTE</string>
+    <string name="battle_started">Batalha Iniciada! %1$s vs %2$s</string>
+    <string name="battle_starting">Preparando a batalha…</string>
+    <string name="combat_started">"INÍCIO DO COMBATE"</string>
+    <string name="round_victory">"VITÓRIA - Round %1$d "</string>
+    <string name="round_defeat">"DERROTA - Round %1$d "</string>
+    <string name="round_draw">"EMPATE - Round %1$d "</string>
+
+    <string name="battle_pre_phase">--- FASE PRÉ-BATALHA ---</string>
+    <string name="battle_pre_phase_end">Fase pré-batalha concluída!</string>
+    <string name="battle_vs_format">%1$s VS %2$s</string>
+    <string name="battle_defeated_format">%1$s foi derrotado!</string>
+
+    <string name="ability_stat_change_format">%1$s %2$s %3$d de %4$s de %5$s</string>
+
+    <string name="stat_attack">ATAQUE</string>
+    <string name="stat_defense">DEFESA</string>
+    <string name="stat_increased">aumentou</string>
+    <string name="stat_decreased">reduziu</string>
+
+    <string name="invoke_reborn">%1$s renasceu!</string>
+    <string name="invoke_spider">%1$s invocou uma Aranha!</string>
+    <string name="invoke_bat">%1$s invocou um Morcego!</string>
+    <string name="invoke_head">%1$s invocou uma Cabeça!</string>
+    <string name="invoke_copy">%1$s invocou uma cópia de %2$s!</string>
+    <string name="invoke_graveyard">%1$s invocou %2$s do cemitério!</string>
+    <string name="invoke_revive_half">%1$s reanimou %2$s com metade dos stats!</string>
+
+    <string name="deck_swap_stats">%1$s inverteu stats de %2$s (%3$d/%4$d)</string>
+    <string name="deck_ban">%1$s baniu %2$s da batalha e do próximo round!</string>
+    <string name="deck_move">%1$s moveu %2$s para posição %3$d</string>
+
+    <string name="general_steal_def">%1$s roubou %2$d de defesa de %3$s!</string>
+    <string name="general_copy_power">%1$s copiou o poder de %2$s!</string>
+    <string name="general_buff_neighbor">%1$s deu +%2$d DEF para %3$s</string>
+
+    <!-- CharacterType -->
+    <string name="type_child">Criança</string>
+    <string name="type_supernatural">Sobrenatural</string>
+    <string name="type_corpse">Cadáver</string>
+    <string name="type_common">Comum</string>
+    <string name="type_masc">Masculino</string>
+    <string name="type_fem">Feminino</string>
+
+    <!-- TriggerType -->
+    <string name="trigger_on_kill">Ao matar</string>
+    <string name="trigger_on_death">Ao morrer</string>
+    <string name="trigger_before_battle">Antes da batalha</string>
+    <string name="trigger_none">Em nenhum momento</string>
+
+    <!-- Powers -->
+    <string name="power_oshikiri" formatted="false">+50% de DEFESA para amigo SOBRENATURAL</string>
+    <string name="power_prof_okabe" formatted="false">+50% de ATAQUE contra inimigo SOBRENATURAL</string>
+    <string name="power_moco_sorvete" formatted="false">-50% de DEFESA para todas as CRIANÇAS</string>
+    <string name="power_kuriko" formatted="false">+50% de DEFESA para amigo CRIANÇA</string>
+    <string name="power_fuchi" formatted="false">+1 de ATAQUE contra inimigo MASCULINO</string>
+    <string name="power_garoto" formatted="false">+1 de ATAQUE contra inimigo FEMININO</string>
+    <string name="power_yuki" formatted="false">+50% de DEFESA para amigo CADÁVER</string>
+    <string name="power_tio" formatted="false">-50% de DEFESA para inimigo CADÁVER</string>
+    <string name="power_misuzu" formatted="false">Inverte ATAQUE e DEFESA de inimigo aleatório</string>
+    <string name="power_yuko" formatted="false">Inimigo aleatório removido do DECK no PRÓXIMO round</string>
+    <string name="power_mulher_costelas" formatted="false">-1 de DEFESA para inimigo aleatório</string>
+    <string name="power_goro" formatted="false">Troca a POSIÇÃO de inimigo aleatório</string>
+    <string name="power_binzo" formatted="false">-1 de ATAQUE para inimigo aleatório</string>
+    <string name="power_tomie" formatted="false">Volta no FIM do DECK (apenas 1x)</string>
+    <string name="power_souichi" formatted="false">Invoca uma ARANHA 1/1</string>
+    <string name="power_kazuya" formatted="false">Invoca um MORCEGO 1/1</string>
+    <string name="power_terumi" formatted="false">Invoca uma CABEÇA 1/1</string>
+    <string name="power_chiemi" formatted="false">Invoca o INIMIGO que a MATOU</string>
+    <string name="power_soldado" formatted="false">Invoca um dublê de uma CARTA aleatória do DECK (se houver)</string>
+    <string name="power_kumi" formatted="false">Invoca a ÚLTIMA carta que MORREU</string>
+    <string name="power_reanimador" formatted="false">Reanima uma CARTA morta no ROUND com 50% de stats</string>
+    <string name="power_maya" formatted="false">+50% de DEFESA ao amigo ao LADO</string>
+    <string name="power_nakayama" formatted="false">-1 de DEFESA a TODOS</string>
+    <string name="power_manchas" formatted="false">-1 de DEFESA para o INIMIGO que o MATOU</string>
+    <string name="power_misaki" formatted="false">Rouba 50% da DEFESA de quem MATOU</string>
+    <string name="power_numei" formatted="false">-50% de DEFESA para o PRÓXIMO inimigo</string>
+    <string name="power_ryo" formatted="false">Rouba o PODER de quem MATOU</string>
+    <string name="power_frankenstein" formatted="false">+50% de ATAQUE a si próprio</string>
+    <string name="power_ayumi" formatted="false">+50% de DEFESA a si próprio</string>
+    <string name="power_esculturas" formatted="false">-50% de ATAQUE para o PRÓXIMO inimigo</string>
+    <string name="power_hideo" formatted="false">+1 de ATAQUE a si próprio</string>
+    <string name="power_tomoo" formatted="false">Inimigo aleatório removido do DECK no PRÓXIMO round</string>
+    <string name="deck_desc_6">Dica: tente combinar poderes… Quer aumentar defesa e ataque do time todo? Quer ter sempre algum morto renascendo? Foque na build!</string>
 </resources>
