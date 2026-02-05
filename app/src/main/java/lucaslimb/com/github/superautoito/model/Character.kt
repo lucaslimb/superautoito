@@ -106,7 +106,7 @@ data class Character(
                     statAmount = StatAmount.HALF
                 ),
                 Character(
-                    id = 3, name = "Fuchi", attack = 8, defense = 6,
+                    id = 3, name = "Fuchi", attack = 6, defense = 6,
                     types = listOf(CharacterType.COMMON, CharacterType.FEM),
                     trigger = TriggerType.BEFORE_BATTLE,
                     imageResId = R.drawable.fuchi,
@@ -175,7 +175,7 @@ data class Character(
                     powerType = PowerType.DECK_CHANGE, powerTargetType = PowerTargetType.RANDOM, powerTarget = PowerTarget.ENEMY
                 ),
                 Character(
-                    id = 31, name = "Binzo", attack = 7, defense = 6,
+                    id = 31, name = "Binzo", attack = 5, defense = 4,
                     types = listOf(CharacterType.CHILD, CharacterType.MASC),
                     trigger = TriggerType.BEFORE_BATTLE,
                     imageResId = R.drawable.binzo,
@@ -318,7 +318,7 @@ data class Character(
                     powerType = PowerType.DEBUFF_DEF, powerTargetType = PowerTargetType.NONE, powerTarget = PowerTarget.SELF
                 ),
                 Character(
-                    id = 17, name = "Esculturas Sem Cabeça", attack = 6, defense = 5,
+                    id = 17, name = "Esculturas Sem Cabeça", attack = 4, defense = 5,
                     types = listOf(CharacterType.SUPERNATURAL, CharacterType.FEM),
                     trigger = TriggerType.ON_KILL,
                     imageResId = R.drawable.esculturas,

@@ -242,15 +242,6 @@
         android:backgroundTint="@android:color/transparent"
         android:textColor="#ffffff"/>
 
-    <Button
-        android:id="@+id/btn_cancel"
-        android:layout_width="100dp"
-        android:layout_height="48dp"
-        android:text="@string/exit"
-        android:textSize="14sp"
-        android:backgroundTint="#333333"
-        android:textColor="#ffffff"/>
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

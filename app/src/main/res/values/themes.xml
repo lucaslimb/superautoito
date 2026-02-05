@@ -1,14 +1,22 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.SuperAutoIto" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="android:colorPrimary">#101010</item>
-        <item name="android:colorSecondary">@color/dark_red</item>
+        <item name="android:windowBackground">#101010</item>
+        <item name="colorPrimary">@color/dark_red</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/black</item>
+        <item name="colorOnSecondary">@color/silver</item>
         <item name="android:statusBarColor">#101010</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:navigationBarColor">@color/dark_red</item>
     </style>
 
     <style name="Theme.SuperAutoIto" parent="Base.Theme.SuperAutoIto" >
+        <item name="android:windowBackground">#101010</item>
+        <item name="colorPrimary">@color/dark_red</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/black</item>
+        <item name="colorOnSecondary">@color/silver</item>
         <item name="android:statusBarColor">#101010</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:navigationBarColor">@color/dark_red</item>

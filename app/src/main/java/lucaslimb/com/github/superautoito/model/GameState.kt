@@ -18,8 +18,10 @@ data class GameState(
     val nextRoundBannedCharacters: List<Int> = emptyList()
 ) : Parcelable {
 
-    fun isGameOver(): Boolean = (currentRound > totalRounds) || (playerLosses > totalRounds-currentRound) || (playerWins > totalRounds-currentRound)
-
+    fun isGameOver(): Boolean {
+        val winsNeeded = (totalRounds / 2) + 1
+        return playerWins >= winsNeeded || playerLosses >= winsNeeded || currentRound > totalRounds
+    }
     fun getFinalWinner(): Int {
         return when {
             playerWins > playerLosses -> 1

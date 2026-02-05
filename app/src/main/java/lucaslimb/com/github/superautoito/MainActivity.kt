@@ -72,7 +72,6 @@ class MainActivity : AppCompatActivity() {
         progressBarMain = findViewById(R.id.progress_bar_main)
         radioGroup = findViewById(R.id.radio_group)
         btnStart = findViewById(R.id.btn_start)
-        btnCancel = findViewById(R.id.btn_cancel)
 
         layoutHost = findViewById(R.id.layout_host_options)
         layoutJoin = findViewById(R.id.layout_join_options)
@@ -99,11 +98,6 @@ class MainActivity : AppCompatActivity() {
 
         btnStart.setOnClickListener {
             handleStartClick()
-        }
-
-        btnCancel.setOnClickListener {
-            networkManager.disconnect()
-            finish()
         }
 
         btnConfigs.setOnClickListener {
@@ -149,9 +143,12 @@ class MainActivity : AppCompatActivity() {
         when (checkedId) {
             R.id.radio_host -> {
                 val roomName = etRoomName.text.toString()
-                var rounds = etHostRounds.text.toString().toIntOrNull() ?: 10
+                val rounds = etHostRounds.text.toString().toIntOrNull() ?: 10
 
-                rounds = rounds.coerceIn(1, 20)
+                if (rounds !in 1..20) {
+                    Toast.makeText(this, getString(R.string.toast_invalid_rounds), Toast.LENGTH_SHORT).show()
+                    return
+                }
 
                 if (roomName.isBlank()) {
                     Toast.makeText(this, getString(R.string.toast_enter_room_name), Toast.LENGTH_SHORT).show()
@@ -168,7 +165,10 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.radio_solo -> {
                 var rounds = etSoloRounds.text.toString().toIntOrNull() ?: 10
-                rounds = rounds.coerceIn(1, 20)
+                if (rounds !in 1..20) {
+                    Toast.makeText(this, getString(R.string.toast_invalid_rounds), Toast.LENGTH_SHORT).show()
+                    return
+                }
 
                 startSoloMode(rounds)
             }

@@ -56,7 +56,7 @@
     <string name="deck_desc_1">No início da partida, 8 personagens são sorteados:</string>
     <string name="deck_desc_2">• 6 entram no time principal\n• 2 ficam na reserva</string>
     <string name="deck_desc_3">Você pode reorganizar a ordem do time e trocar personagens entre principais e reservas livremente.</string>
-    <string name="deck_desc_4">A cada rodada, é obrigatório que você coloque ao menos uma carta da reserva no time principal.</string>
+    <string name="deck_desc_4">A cada rodada, é obrigatório que você coloque ao menos uma carta de posição. Pode ser entre cartas do time principal, ou trazendo uma carta reserva ao time principal.</string>
     <string name="deck_desc_5">Ao sofrer uma derrota, você pode comprar um personagem aleatório da loja e colocá-lo na reserva. Ele pode entrar no time principal em seguida.</string>
     <string name="section_battle">A Batalha</string>
     <string name="battle_desc_1">As batalhas acontecem em duas fases:</string>
@@ -191,4 +191,5 @@
     <string name="power_tomoo" formatted="false">Inimigo aleatório removido do DECK no PRÓXIMO round</string>
     <string name="deck_desc_6">Dica: tente combinar poderes… Quer aumentar defesa e ataque do time todo? Quer ter sempre algum morto renascendo? Foque na build!</string>
     <string name="touch_a_card">Toque em uma carta para ver seus detalhes.</string>
+    <string name="toast_invalid_rounds">Número de rounds: de 1 a 20</string>
 </resources>
