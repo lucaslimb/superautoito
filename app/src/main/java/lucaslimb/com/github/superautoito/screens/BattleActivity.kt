@@ -33,7 +33,6 @@ class BattleActivity : AppCompatActivity() {
 
     private val playerCardViews = mutableListOf<View>()
     private val enemyCardViews = mutableListOf<View>()
-    private val deadCharacterIds = mutableSetOf<Int>()
     private lateinit var tvPlayerName: TextView
     private lateinit var tvOpponentName: TextView
     private lateinit var tvBattleLog: TextView

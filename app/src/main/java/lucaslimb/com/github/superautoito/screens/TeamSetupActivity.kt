@@ -64,7 +64,12 @@ class TeamSetupActivity : AppCompatActivity() {
     private var maxRounds: Int = 20
     private lateinit var btnExit: Button
     private val gson = Gson()
-    private lateinit var networkManager: NetworkManager
+    private var networkManager: NetworkManager? = null
+    private var isReady: Boolean = false
+    // Data holding for synchronization
+    private var pendingOpponentTeam: List<Character>? = null
+    private var pendingOpponentReserve: List<Character>? = null
+    private var isOpponentReady: Boolean = false
 
     private val feedbackHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val resetTextRunnable = Runnable { tvInstructions.text = defaultText }
@@ -77,10 +82,12 @@ class TeamSetupActivity : AppCompatActivity() {
         setContentView(R.layout.activity_team_setup)
 
         gameState = intent.getParcelableExtra("GAME_STATE")
+        isMultiplayer = intent.getBooleanExtra("IS_MULTIPLAYER", false) || (gameState?.isMultiplayer == true)
         initViews()
 
         if (isMultiplayer) {
             networkManager = NetworkManager(this)
+            listenForOpponentMessages()
         }
 
         if (gameState != null) {
@@ -148,6 +155,85 @@ class TeamSetupActivity : AppCompatActivity() {
 
         if (gameState?.playerCanBuyCard == true) {
             showFeedbackMessage(getString(R.string.defeat_shop_available))
+        }
+    }
+
+    private fun listenForOpponentMessages() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            while (true) {
+                val message = networkManager?.receiveMessage()
+                if (message != null) {
+                    handleNetworkMessage(message)
+                }
+            }
+        }
+    }
+
+    private suspend fun handleNetworkMessage(json: String) {
+        try {
+            val dataMap = gson.fromJson(json, Map::class.java)
+
+            if (dataMap["type"] == "READY") {
+                val opponentTeamJson = gson.toJson(dataMap["team"])
+                val opponentReserveJson = gson.toJson(dataMap["reserve"])
+
+                val newOppTeam = gson.fromJson(opponentTeamJson, Array<Character>::class.java).toList()
+                val newOppReserve = gson.fromJson(opponentReserveJson, Array<Character>::class.java).toList()
+
+                pendingOpponentTeam = newOppTeam
+                pendingOpponentReserve = newOppReserve
+                isOpponentReady = true
+
+                withContext(Dispatchers.Main) {
+                    checkStartCondition()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun sendReadySignal(teamName: String) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val readyPayload = mapOf(
+                    "type" to "READY",
+                    "team" to mainCards.reversed(),
+                    "reserve" to reserveCards,
+                    "name" to teamName
+                )
+                val json = gson.toJson(readyPayload)
+                networkManager?.sendMessage(json)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@TeamSetupActivity, "Error sending ready: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun checkStartCondition() {
+        if (isMultiplayer) {
+            if (isReady && isOpponentReady) {
+                // Update opponent data with what we received
+                pendingOpponentTeam?.let { opponentPlayer = opponentPlayer.copy(hand = it) }
+                pendingOpponentReserve?.let { opponentReserve = it.toMutableList() }
+
+                // Get current name from Edit Text
+                val rawTeamName = etTeamName.text.toString().trim()
+                val finalTeamName = rawTeamName.ifEmpty { currentPlayer.name }
+
+                launchBattle(finalTeamName)
+            } else if (isReady && !isOpponentReady) {
+                // I am waiting for opponent
+                showFeedbackMessage(getString(R.string.waiting_opponent_ready))
+                btnConfirm.text = getString(R.string.waiting_ellipses)
+                btnConfirm.isEnabled = false
+                btnConfirm.setBackgroundColor(Color.DKGRAY)
+            } else if (!isReady && isOpponentReady) {
+                // Opponent is waiting for me
+                showFeedbackMessage(getString(R.string.opponent_is_ready))
+            }
         }
     }
 
@@ -358,10 +444,12 @@ class TeamSetupActivity : AppCompatActivity() {
 
             if (isMultiplayer) {
                 lifecycleScope.launch {
-                    syncAndStartBattle(finalTeamName)
+                    isReady = true
+                    sendReadySignal(finalTeamName)
+                    checkStartCondition()
                 }
             } else {
-                startBattleLocal(finalTeamName)
+                launchBattle(finalTeamName)
             }
         }
         btnExit.setOnClickListener {
@@ -372,71 +460,7 @@ class TeamSetupActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun syncAndStartBattle(teamName: String) = withContext(Dispatchers.IO) {
-        try {
-            val myTeamData = mapOf(
-                "team" to mainCards.reversed(),
-                "reserve" to reserveCards
-            )
-
-            val myJson = gson.toJson(myTeamData)
-            networkManager.sendMessage(myJson)
-
-            val opponentJson = networkManager.receiveMessage()
-                ?: throw Exception("Não recebeu time do oponente")
-
-            val opponentData = gson.fromJson(opponentJson, Map::class.java)
-            val opponentTeamJson = gson.toJson(opponentData["team"])
-            val opponentReserveJson = gson.toJson(opponentData["reserve"])
-
-            val opponentTeam = gson.fromJson(opponentTeamJson, Array<Character>::class.java).toList()
-            val opponentRes = gson.fromJson(opponentReserveJson, Array<Character>::class.java).toList()
-
-            withContext(Dispatchers.Main) {
-                val intent = Intent(this@TeamSetupActivity, BattleActivity::class.java)
-
-                if (gameState != null) {
-                    val updatedState = gameState!!.copy(
-                        playerTeam = mainCards.reversed(),
-                        playerReserve = reserveCards,
-                        opponentTeam = opponentTeam,
-                        opponentReserve = opponentRes,
-                        isMultiplayer = true
-                    )
-                    intent.putExtra("GAME_STATE", updatedState)
-                    intent.putExtra("PLAYER_NAME", teamName)
-                } else {
-                    val updatedPlayer = currentPlayer.copy(
-                        name = teamName,
-                        hand = mainCards.reversed()
-                    )
-                    val updatedOpponent = opponentPlayer.copy(
-                        hand = opponentTeam
-                    )
-                    intent.putExtra("CURRENT_PLAYER", updatedPlayer)
-                    intent.putExtra("OPPONENT_PLAYER", updatedOpponent)
-                    intent.putParcelableArrayListExtra("PLAYER_RESERVE", ArrayList(reserveCards))
-                    intent.putParcelableArrayListExtra("OPPONENT_RESERVE", ArrayList(opponentRes))
-                    intent.putExtra("MAX_ROUNDS", maxRounds)
-                    intent.putExtra("IS_MULTIPLAYER", true)
-                }
-
-                startActivity(intent)
-                finish()
-            }
-
-        } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                Toast.makeText(
-                    this@TeamSetupActivity,
-                    "Erro de sync: ${e.message}",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
-    }
-
-    private fun startBattleLocal(teamName: String) {
+    private fun launchBattle(teamName: String) {
         val intent = Intent(this, BattleActivity::class.java)
 
         if (gameState != null) {
@@ -445,7 +469,7 @@ class TeamSetupActivity : AppCompatActivity() {
                 playerReserve = reserveCards,
                 opponentTeam = opponentPlayer.hand,
                 opponentReserve = opponentReserve,
-                isMultiplayer = false
+                isMultiplayer = isMultiplayer
             )
             intent.putExtra("GAME_STATE", updatedState)
             intent.putExtra("PLAYER_NAME", teamName)
@@ -459,7 +483,7 @@ class TeamSetupActivity : AppCompatActivity() {
             intent.putParcelableArrayListExtra("PLAYER_RESERVE", ArrayList(reserveCards))
             intent.putParcelableArrayListExtra("OPPONENT_RESERVE", ArrayList(opponentReserve))
             intent.putExtra("MAX_ROUNDS", maxRounds)
-            intent.putExtra("IS_MULTIPLAYER", false)
+            intent.putExtra("IS_MULTIPLAYER", isMultiplayer)
         }
 
         startActivity(intent)

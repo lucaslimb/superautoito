@@ -325,8 +325,8 @@ class AbilityExecutor (
                         // Removemos vítima/killer do contexto clonado para evitar efeitos colaterais estranhos
                         // a menos que o poder da vítima precise deles.
                         // Geralmente powers ativos (Buff/Invoke) não usam victim/killer no momento da execução.
-                        victim = null,
-                        killer = null
+                        victim = originalVictim,
+                        killer = mimicRyo
                     )
 
                     // 5. RECURSIVIDADE: Executa a habilidade roubada imediatamente

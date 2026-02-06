@@ -246,6 +246,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/version_info"
+        android:gravity="center"
         android:textSize="12sp"
         android:textColor="#666666"
         android:layout_marginTop="24dp"/>
@@ -267,5 +268,16 @@
         android:textSize="12sp"
         android:textColor="#666666"
         android:layout_marginTop="2dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/copyright_info"
+        android:linksClickable="true"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:textColor="#666666"
+        android:padding="10dp"
+        android:layout_marginTop="30dp"/>
 
 </LinearLayout>

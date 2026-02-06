@@ -16,7 +16,7 @@
     <string name="select_mode">SELECIONE UM MODO</string>
     <string name="how_to_play">Como jogar?</string>
     <string name="exit">SAIR</string>
-    <string name="version_info">1.0 - Local network version</string>
+    <string name="version_info">v1.0.0\n As batalhas multiplayer ocorrem em rede local.</string>
     <string name="github_link">github.com/lucaslimb</string>
     <string name="email_contact">lucasdelimabzr@gmail.com</string>
 
@@ -138,7 +138,7 @@
     <string name="invoke_revive_half">%1$s reanimou %2$s com metade dos stats!</string>
 
     <string name="deck_swap_stats">%1$s inverteu stats de %2$s (%3$d/%4$d)</string>
-    <string name="deck_ban">%1$s baniu %2$s da batalha e do próximo round!</string>
+    <string name="deck_ban">%1$s baniu %2$s do próximo round!</string>
     <string name="deck_move">%1$s moveu %2$s para posição %3$d</string>
 
     <string name="general_steal_def">%1$s roubou %2$d de defesa de %3$s!</string>
@@ -194,4 +194,8 @@
     <string name="toast_invalid_rounds">Número de rounds: de 1 a 20</string>
     <string name="error_timeout">Timeout da conexão excedido.</string>
     <string name="opponent_name">Oponente\n</string>
+    <string name="copyright_info"><![CDATA[Este é um projeto acadêmico sem fins lucrativos, com foco em desenvolvimento mobile. Os direitos das imagens das cartas são de propriedade da Pipoca & Nanquim.]]></string>
+    <string name="waiting_opponent_ready">Aguardando o oponente definir o time!</string>
+    <string name="waiting_ellipses">...</string>
+    <string name="opponent_is_ready">Oponente pronto para batalha!</string>
 </resources>
